@@ -1,9 +1,11 @@
+package DataCalcul;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -17,12 +19,13 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.codehaus.jettison.json.JSONObject;
 
 public class WinDeck {
-  public static class WinDeckMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+
+  public static class WinDeckMapper extends Mapper<LongWritable, Text, Text, DoubleWritable> {
 
     private Text wordWeek = new Text();
     private Text wordMonth = new Text();
     private	Text wordGlobal = new Text();
-    private IntWritable winValue = new IntWritable(1);
+    private DoubleWritable  winValue = new DoubleWritable (1.0);
 
     public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
       try {
@@ -73,11 +76,11 @@ public class WinDeck {
     }
   }
 
-  public static class WinDeckReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+  public static class WinDeckReducer extends Reducer<Text, DoubleWritable , Text, IntWritable > {
 
-    public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
-      int sum = 0;
-      for (IntWritable val : values) {
+    public void reduce(Text key, Iterable<DoubleWritable> values, Context context) throws IOException, InterruptedException {
+      double sum = 0.0;
+      for (DoubleWritable val : values) {
         sum += val.get();
       }
       Text word = new Text();
@@ -86,21 +89,21 @@ public class WinDeck {
     }
   }
 
-  public static void mainDeck(String[] args) throws Exception {
+  public static void mainDeck(String[] args, String output) throws Exception {
     Configuration conf = new Configuration();
     Job job = Job.getInstance(conf, "WinDeck");
     job.setNumReduceTasks(1);
     job.setJarByClass(WinDeck.class);
     job.setMapperClass(WinDeckMapper.class);
     job.setMapOutputKeyClass(Text.class);
-    job.setMapOutputValueClass(IntWritable.class);
+    job.setMapOutputValueClass(DoubleWritable.class);
     job.setReducerClass(WinDeckReducer.class);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(IntWritable.class);
     job.setOutputFormatClass(TextOutputFormat.class);
     job.setInputFormatClass(TextInputFormat.class);
     FileInputFormat.addInputPath(job, new Path(args[0]));
-    FileOutputFormat.setOutputPath(job, new Path(args[1]));
-    System.exit(job.waitForCompletion(true) ? 0 : 1);
+    FileOutputFormat.setOutputPath(job, new Path(output));
+    job.waitForCompletion(true);
   }
 }
