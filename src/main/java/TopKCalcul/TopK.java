@@ -156,7 +156,7 @@ public class TopK {
         }
     }
 
-    public static void mainTopKWeeks(String input, String output, int k) throws Exception {
+    public static void mainTopK(String input, String output, int k) throws Exception {
         Configuration conf = new Configuration();
         conf.setInt("k", k);
         Job job = Job.getInstance(conf, "TopKWeeks");
