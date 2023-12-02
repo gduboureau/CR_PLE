@@ -1,8 +1,8 @@
 package DataCalcul;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.WeekFields;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
@@ -36,12 +36,10 @@ public class WinDeck {
           int win = Integer.parseInt(obj.getString("win"));
           String date = obj.getString("date");
 
-          SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-          Date parsingDate = dateFormat.parse(date);
-          Calendar calendar = Calendar.getInstance();
-          calendar.setTime(parsingDate);
-          int week = calendar.get(Calendar.WEEK_OF_YEAR);
-          int month = calendar.get(Calendar.MONTH) + 1; // month start from 0
+          LocalDateTime dateTime = LocalDateTime.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+
+          int month = dateTime.getMonthValue();
+          int week = dateTime.get(WeekFields.ISO.weekOfWeekBasedYear());
 
           if (win == 0) {
             // for each week
