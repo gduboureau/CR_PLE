@@ -77,13 +77,13 @@ public class BestClanWin {
         public void reduce(Text key, Iterable<IntWritable> values, Context context)
                 throws IOException, InterruptedException {
             
-            TreeSet<IntWritable> ClanLvls = new TreeSet<>();
+            double maxLvl = 0;
 
             for (IntWritable value : values) {
-                ClanLvls.add(value);
+                maxLvl = Math.max(maxLvl, value.get());
             }
 
-            word.set(key.toString() + "," + (double) ClanLvls.last().get());
+            word.set(key.toString() + "," + (double) maxLvl);
             context.write(word, null);
 
         }
