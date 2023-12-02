@@ -3,7 +3,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.TreeSet;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -77,13 +76,13 @@ public class BestClanWin {
         public void reduce(Text key, Iterable<IntWritable> values, Context context)
                 throws IOException, InterruptedException {
             
-            TreeSet<IntWritable> ClanLvls = new TreeSet<>();
+            double maxLvl = 0;
 
             for (IntWritable value : values) {
-                ClanLvls.add(value);
+                maxLvl = Math.max(maxLvl, value.get());
             }
 
-            word.set(key.toString() + "," + (double) ClanLvls.last().get());
+            word.set(key.toString() + "," + (double) maxLvl);
             context.write(word, null);
 
         }
