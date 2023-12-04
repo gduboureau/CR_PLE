@@ -1,4 +1,8 @@
-import DataCalcul.*;
+import DataCalcul.BestClanWin;
+import DataCalcul.DiffForceWin;
+import DataCalcul.UniquePlayerUse;
+import DataCalcul.UseDeck;
+import DataCalcul.WinDeck;
 import TopKCalcul.TopK;
 
 public class Driver {
@@ -16,5 +20,17 @@ public class Driver {
         TopK.mainTopK("DataPLE/result/UniquePlayerUse/part-r-00000", "DataPLE/resultTopK/TopKUniquePlayerUse", Integer.parseInt(args[1]));
         TopK.mainTopK("DataPLE/result/BestClanWin/part-r-00000", "DataPLE/resultTopK/TopKBestClanWin", Integer.parseInt(args[1]));
         TopK.mainTopK("DataPLE/result/DiffForceWin/part-r-00000", "DataPLE/resultTopK/TopKDiffForceWin", Integer.parseInt(args[1]));
+
+        String[] files = { 
+                        "DataPLE/resultTopK/TopKWinDeck/part-r-00000",
+                        "DataPLE/resultTopK/TopKUseDeck/part-r-00000",
+                        "DataPLE/resultTopK/TopKUniquePlayerUse/part-r-00000",
+                        "DataPLE/resultTopK/TopKBestClanWin/part-r-00000",
+                        "DataPLE/resultTopK/TopKDiffForceWin/part-r-00000"
+                        };
+
+        HBase.mainHBase(files);
+
     }
+
 }
