@@ -88,7 +88,7 @@ public class UseDeck {
     }
 
 
-    public static void JobUseDeck(String[] args, String output) throws Exception {
+    public static void JobUseDeck(String input, String output) throws Exception {
     
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf, "UseDeck");
@@ -100,7 +100,7 @@ public class UseDeck {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(DoubleWritable.class);
 
-        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileInputFormat.addInputPath(job, new Path(input));
         FileOutputFormat.setOutputPath(job, new Path(output));
 
         job.waitForCompletion(true);

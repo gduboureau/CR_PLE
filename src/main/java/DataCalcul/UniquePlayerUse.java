@@ -92,7 +92,7 @@ public class UniquePlayerUse {
     }
 
 
-    public static void JobUniquePlayerUse(String[] args, String output) throws Exception {
+    public static void JobUniquePlayerUse(String input, String output) throws Exception {
     
       Configuration conf = new Configuration();
       Job job = Job.getInstance(conf, "UniquePlayerUse");
@@ -104,7 +104,7 @@ public class UniquePlayerUse {
       job.setOutputKeyClass(Text.class);
       job.setOutputValueClass(Text.class);
 
-      FileInputFormat.addInputPath(job, new Path(args[0]));
+      FileInputFormat.addInputPath(job, new Path(input));
       FileOutputFormat.setOutputPath(job, new Path(output));
 
       job.waitForCompletion(true);

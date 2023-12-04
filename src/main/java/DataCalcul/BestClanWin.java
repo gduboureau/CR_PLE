@@ -88,7 +88,7 @@ public class BestClanWin {
     }
 
 
-    public static void JobBestClanWin(String[] args, String ouput) throws Exception {
+    public static void JobBestClanWin(String input, String ouput) throws Exception {
     
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf, "UniquePlayerUse");
@@ -100,7 +100,7 @@ public class BestClanWin {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(IntWritable.class);
   
-        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileInputFormat.addInputPath(job, new Path(input));
         FileOutputFormat.setOutputPath(job, new Path(ouput));
   
         job.waitForCompletion(true);

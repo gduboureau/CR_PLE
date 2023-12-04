@@ -93,7 +93,7 @@ public class DiffForceWin {
     }
 
 
-    public static void JobDiffForceWin(String[] args, String ouput) throws Exception {
+    public static void JobDiffForceWin(String input, String ouput) throws Exception {
     
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf, "UniquePlayerUse");
@@ -105,7 +105,7 @@ public class DiffForceWin {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(DoubleWritable.class);
   
-        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileInputFormat.addInputPath(job, new Path(input));
         FileOutputFormat.setOutputPath(job, new Path(ouput));
   
         job.waitForCompletion(true);

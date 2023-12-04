@@ -87,7 +87,7 @@ public class WinDeck {
     }
   }
 
-  public static void mainDeck(String[] args, String output) throws Exception {
+  public static void mainDeck(String input, String output) throws Exception {
     Configuration conf = new Configuration();
     Job job = Job.getInstance(conf, "WinDeck");
     job.setNumReduceTasks(1);
@@ -100,7 +100,7 @@ public class WinDeck {
     job.setOutputValueClass(IntWritable.class);
     job.setOutputFormatClass(TextOutputFormat.class);
     job.setInputFormatClass(TextInputFormat.class);
-    FileInputFormat.addInputPath(job, new Path(args[0]));
+    FileInputFormat.addInputPath(job, new Path(input));
     FileOutputFormat.setOutputPath(job, new Path(output));
     job.waitForCompletion(true);
   }
