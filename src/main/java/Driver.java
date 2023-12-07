@@ -41,13 +41,14 @@ public class Driver {
     public static void main(String[] args) throws Exception {
 
         int k = 10;
+        String inputFile = "/user/auber/data_ple/clashroyale/gdc_battles.nljson";
 
         Options options = new Options();
         options.addOption("h", "help", false, "Afficher l'aide");
-        options.addOption("mapreduce", true, "Faire uniquement les traitements map reduce");
+        options.addOption("mapreduce", false, "Faire uniquement les traitements map reduce");
         options.addOption("hbase", false, "Faire uniquement hbase");
         options.addOption("k", true, "Valeur de k");
-        options.addOption("default", false, "Effectuer tous les traitements par défaut (option par défaut, peut être spécifiée explicitement)");
+        options.addOption("default", false, "Effectuer tous les traitements par défaut (option par défaut, peut être spécifiée explicitement ou non)");
 
         
         CommandLineParser parser = new PosixParser();
@@ -79,23 +80,11 @@ public class Driver {
         
         Driver driver = new Driver();
         if (cmd.hasOption("mapreduce")) {
-            String input = cmd.getOptionValue("mapreduce");
-            if(input == null || input.isEmpty()){ 
-                System.err.println("L'option -mapreduce nécessite la spécification du fichier d'entrée.");
-                System.exit(1);
-            }else{
-                driver.doMapReduce(input, k);
-            }
+            driver.doMapReduce(inputFile, k);
         }else if(cmd.hasOption("hbase")){
             driver.doHBase();
         }else{
-             String input = cmd.getOptionValue("mapreduce");
-            if(input == null || input.isEmpty()){ 
-                System.err.println("L'option -mapreduce nécessite la spécification du fichier d'entrée.");
-                System.exit(1);
-            }else{
-                driver.doMapReduce(input, k);
-            }
+            driver.doMapReduce(inputFile, k);
             driver.doHBase();
         }
     }

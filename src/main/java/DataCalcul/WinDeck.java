@@ -31,8 +31,8 @@ public class WinDeck {
       try {
         JSONObject obj = new JSONObject(value.toString());
         if (obj.has("cards") && obj.has("cards2") && obj.has("win")) {
-          String cards = obj.getString("cards");
-          String cards2 = obj.getString("cards2");
+          String cards = SortedDeck.sortDeck(obj.getString("cards"));
+          String cards2 = SortedDeck.sortDeck(obj.getString("cards2"));
           int win = Integer.parseInt(obj.getString("win"));
           String date = obj.getString("date");
 

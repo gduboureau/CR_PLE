@@ -43,11 +43,11 @@ public class BestClanWin {
 
                     if (win == 1){ //le player 1 gagne
                         clanLvl.set(clanTr1);
-                        cards = obj.getString("cards");
+                        cards = SortedDeck.sortDeck(obj.getString("cards"));
 
                     }else{
                         clanLvl.set(clanTr2);
-                        cards = obj.getString("cards2");
+                        cards = SortedDeck.sortDeck(obj.getString("cards2"));
                     }
     
                     word.set("WEEK_" + week + "_" + cards);

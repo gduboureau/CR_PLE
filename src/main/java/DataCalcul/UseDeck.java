@@ -32,8 +32,8 @@ public class UseDeck {
 
                 if (obj.has("cards") && obj.has("cards2") && obj.has("date")){
 
-                    String cards1 = obj.getString("cards");
-                    String cards2 = obj.getString("cards2");
+                    String cards1 = SortedDeck.sortDeck(obj.getString("cards"));
+                    String cards2 = SortedDeck.sortDeck(obj.getString("cards2"));
                     String date = obj.getString("date");
 
                     LocalDateTime dateTime = LocalDateTime.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));

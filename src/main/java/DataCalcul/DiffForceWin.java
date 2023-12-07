@@ -43,13 +43,13 @@ public class DiffForceWin {
                     int week = dateTime.get(WeekFields.ISO.weekOfWeekBasedYear());
 
                     if (win == 1){ //le player 1 gagne
-                        cards = obj.getString("cards");
+                        cards = SortedDeck.sortDeck(obj.getString("cards"));
                         diffForce.set(Math.abs(deck1 - deck2));
 
 
                     }else{
                         // clanLvl.set(clanTr2);
-                        cards = obj.getString("cards2");
+                        cards = SortedDeck.sortDeck(obj.getString("cards2"));
                         diffForce.set(Math.abs(deck2 - deck1));
                     }
     

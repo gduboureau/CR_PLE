@@ -29,8 +29,8 @@ public class UniquePlayerUse {
                 JSONObject obj = new JSONObject(value.toString());
     
                 if (obj.has("cards") && obj.has("cards2") && obj.has("player") && obj.has("player2") && obj.has("date")) {
-                    String cards1 = obj.getString("cards");
-                    String cards2 = obj.getString("cards2");
+                    String cards1 = SortedDeck.sortDeck(obj.getString("cards"));
+                    String cards2 = SortedDeck.sortDeck(obj.getString("cards2"));
                     String player1 = obj.getString("player");
                     String player2 = obj.getString("player2");
                     String date = obj.getString("date");
