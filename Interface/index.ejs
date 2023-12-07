@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/styles/style.css">
+  <title>Interface HBase</title>
+</head>
+<body>
+  <h1>Interface HBase</h1>
+
+  <form action="/getData" method="post">
+    <label for="columnFamily">Choisir la colonne family :</label>
+    <select name="columnFamily" id="columnFamily">
+      <% families.forEach(family => { %>
+        <option value="<%= family %>"><%= family %></option>
+      <% }); %>
+    </select>
+
+    <label for="rowKey">Choisir la rowkey :</label>
+    <select name="rowKey" id="rowKey">
+      <% rowkeys.forEach(rowkey => { %>
+        <option value="<%= rowkey %>"><%= rowkey %></option>
+      <% }); %>
+    </select>
+
+    <button type="submit">Afficher les données</button>
+  </form>
+</body>
+</html>
