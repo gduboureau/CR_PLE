@@ -1,10 +1,11 @@
 const express = require('express');
 const hbase = require('hbase');
 const path = require('path');
-const{ Deck } = require('./deck'); 
+const { Deck } = require('./deck');
 
 const app = express();
 const port = 3004;
+
 
 // Configuration HBase
 const hbaseClient = hbase({
@@ -21,7 +22,7 @@ const hbaseClient = hbase({
 function getDataFromHBase(columnFamily, rowKey) {
   return new Promise((resolve, reject) => {
     hbaseClient
-      .table('gduboureau:CRdata') 
+      .table('gduboureau:CRdata')
       .row(rowKey)
       .get(columnFamily, (error, value) => {
         if (error) {
@@ -36,10 +37,10 @@ function getDataFromHBase(columnFamily, rowKey) {
 function getColumnDescription(columnName) {
   const columnDescriptions = {
     nb_uniquePlayer: "Nombre unique de joueur jouant le deck",
-    best_clan : "Meilleur clan jouant le deck gagant",
-    diff_force : "Différence moyenne de force du deck gagnant",
-    nb_use : "Nombre d'utilisation du deck",
-    nb_win : "Nombre de victoire du deck",
+    best_clan: "Meilleur clan jouant le deck gagant",
+    diff_force: "Différence moyenne de force du deck gagnant",
+    nb_use: "Nombre d'utilisation du deck",
+    nb_win: "Nombre de victoire du deck",
   };
 
   return columnDescriptions[columnName] || columnName;
@@ -58,8 +59,6 @@ async function getHBaseMetadata() {
           for (const column of schema.ColumnSchema) {
             familyName.push(column.name);
           }
-
-          // Récupérer quelques rowkeys à titre d'exemple
           hbaseClient
             .table('gduboureau:CRdata')
             .scan({
@@ -70,16 +69,13 @@ async function getHBaseMetadata() {
               } else {
                 const rowSet = new Set();
 
-                // Ajouter les rowkeys à l'ensemble
                 rows.forEach(row => {
                   rowSet.add(row.key.toString('utf8'));
                 });
 
-                // Convertir l'ensemble en tableau
                 const rowkeys = Array.from(rowSet);
 
 
-                // Résoudre la promesse avec les données
                 resolve({ families: familyName, rowkeys });
               }
             });
@@ -91,10 +87,8 @@ async function getHBaseMetadata() {
 // Fonction pour afficher la page principale
 async function showHomePage(req, res) {
   try {
-    // Utiliser la fonction pour obtenir les données de HBase
     const { families, rowkeys } = await getHBaseMetadata();
 
-    // Générer le HTML de la page principale
     const html = `
       <!DOCTYPE html>
       <html lang="en">
@@ -102,6 +96,12 @@ async function showHomePage(req, res) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Interface HBase</title>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap">
+        <style>
+          body {
+            font-family: 'Poppins', sans-serif;
+          }
+      </style>
       </head>
       <body>
         <h1>Statistiques de Decks Clash Royale</h1>
@@ -110,7 +110,7 @@ async function showHomePage(req, res) {
         <br>
 
         <form action="/getData" method="post">
-          <label for="columnFamily">Choisissez la statisque :</label>
+          <label for="columnFamily">Choisissez la statistique :</label>
           <select name="columnFamily" id="columnFamily">
             ${families.map(family => `<option value="${family}">${family}</option>`).join('')}
           </select>
@@ -121,16 +121,24 @@ async function showHomePage(req, res) {
           <select name="rowKey" id="rowKey">
             ${rowkeys.map(rowkey => `<option value="${rowkey}">${rowkey}</option>`).join('')}
           </select>
-    
-          <br><br><br><br><br>
 
+          <br><br><br>
+
+          <label for="numDecks">Nombre de decks à afficher :</label>
+          <select name="numDecks" id="numDecks">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="50">50</option>
+          </select>
+    
+          <br><br><br>
+  
           <button type="submit">Afficher les decks</button>
         </form>
       </body>
       </html>
     `;
 
-    // Renvoyer le HTML au client
     res.send(html);
   } catch (error) {
     console.error('Erreur lors de la récupération des données depuis HBase:', error);
@@ -138,28 +146,24 @@ async function showHomePage(req, res) {
   }
 }
 
-// Middleware pour le traitement des données POST
-app.use(express.urlencoded({ extended: true }));
+app.use(urlencoded({ extended: true }));
 
-// Route pour afficher la page principale
 app.get('/', showHomePage);
 
-// Route pour gérer la requête POST
 app.post('/getData', async (req, res) => {
-  const { columnFamily, rowKey } = req.body;
+  const { columnFamily, rowKey, numDecks } = req.body;
 
   try {
     const data = await getDataFromHBase(columnFamily, rowKey);
-
     const cardIdArray = [];
     const valueArray = [];
     data.forEach(item => {
-      const columnParts = item.column.split(':'); 
-      const cardId = columnParts[1]; 
+      const columnParts = item.column.split(':');
+      const cardId = columnParts[1];
       if (cardId && cardId.startsWith('cardId')) {
-        cardIdArray.push({ cardId, value: item['$'] }); 
+        cardIdArray.push({ cardId, value: item['$'] });
       } else if (cardId && cardId.startsWith('value')) {
-        valueArray.push({ cardId, value: item['$'] }); 
+        valueArray.push({ cardId, value: item['$'] });
       }
     });
 
@@ -168,7 +172,7 @@ app.post('/getData', async (req, res) => {
       const numB = parseInt(b.cardId.split('_')[1]);
       return numA - numB;
     });
-    
+
     valueArray.sort((a, b) => {
       const numA = parseInt(a.cardId.split('_')[1]);
       const numB = parseInt(b.cardId.split('_')[1]);
@@ -176,42 +180,49 @@ app.post('/getData', async (req, res) => {
     });
 
     const selectedColumn = getColumnDescription(columnFamily) || "Statistique";
+    const numDecksToShow = parseInt(numDecks, 10) || cardIdArray.length;
 
-    // Générer le HTML avec les données
-    const html =  `
+    const html = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Résultat</title>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap">
+      <style>
+        body {
+          font-family: 'Poppins', sans-serif;
+        }
+      </style>
     </head>
     <body>
       <h1>${selectedColumn}</h1>
       <div>
-      <ul>
-        ${cardIdArray.map((item, index) => {
-          const deck = new Deck(item.value);
-          const card = deck.cards();
-          return `
+      <ul class="deck-ul">
+        ${cardIdArray.slice(0, numDecksToShow).map((item, index) => {
+      const deck = new Deck(item.value);
+      const card = deck.cards();
+      return `
+          <div class="card-deck-div">
             <h3>Top ${index + 1}</h3>
-            <li>Identifiant du deck: ${item.value}, 
-            Valeur de la statistique: ${valueArray.find(v => v.cardId === 'value_' + item.cardId.split('_')[1]).value}</li>
-            <div style="display:inline-block;">
+            <li>Identifiant du deck: ${item.value}<li> 
+            <p>Valeur de la statistique: ${valueArray.find(v => v.cardId === 'value_' + item.cardId.split('_')[1]).value}</p>
+            <div class="deck-cards">
               ${card.map(([name, imageUrl]) => `
                 <div style="display:inline-block; margin-right:10px;">
                   <img src="${imageUrl}" alt="${name}" width="100" height="100">
                   <p>${name}</p>
                 </div>`).join('')}
-            </div>`;
-        }).join('')}
+            </div>
+          </div>`;
+    }).join('')}
       </ul>
     </div>
     </body>
     </html>
   `;
 
-    // Renvoyer le HTML au client
     res.send(html);
   } catch (error) {
     console.error('Erreur lors de la récupération des données depuis HBase:', error);
@@ -219,7 +230,6 @@ app.post('/getData', async (req, res) => {
   }
 });
 
-// Démarrer le serveur
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
