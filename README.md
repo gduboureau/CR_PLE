@@ -91,3 +91,7 @@ Le serveur est maintenant lancé, il suffit de lancer firefox via la commande :
 ```
 
 Si il y a des erreurs pour lancer le navigateur, n'oubliez pas d'utiliser la commande -X avec ssh pour vous connecter sur la passerelle.
+
+### Demo
+
+![GIF d'exemple](demo.gif)
