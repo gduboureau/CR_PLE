@@ -32,10 +32,10 @@ Ensuite, utilisez la commande suivante pour lancer le programme MapReduce avec Y
 ```
 
 #### Options disponibles
-* -__mapreduce [file]__: Effectue uniquement les traitements MapReduce.
+* -__mapreduce : Effectue uniquement les traitements MapReduce.
 * -__hbase__: Initialise uniquement la base de données HBase.
 * -__k [valeur]__: Spécifie la valeur de k pour le traitement TopK (10 par défaut).
-* -__default [file]__: Effectue les deux traitements.
+* -__default: Effectue les deux traitements.
 * -__h__: Affiche l'aide
 
 Assurez-vous d'exécuter la commande suivante pour configurer les dépendances HBase :
@@ -76,7 +76,7 @@ Pour pouvoir lancer le serveur web, utilisez la commande suivante sur la passere
   node app.js
 ```
 
-Il faudra télcharger au préalable les packages suivant depuis la psserelle : 
+Il faudra télécharger au préalable les packages suivant depuis la passerelle : 
 
 
 ```bash
