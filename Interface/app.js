@@ -91,20 +91,27 @@ async function showHomePage(req, res) {
         <title>Interface HBase</title>
       </head>
       <body>
-        <h1>Interface HBase</h1>
+        <h1>Statistiques de Decks Clash Royale</h1>
+        <h2>Cette interface vous permet d'afficher les meilleurs decks selon une statistique ainsi qu'une durée.</h2>
     
+        <br>
+
         <form action="/getData" method="post">
-          <label for="columnFamily">Choisir la colonne family :</label>
+          <label for="columnFamily">Choisissez la statisque :</label>
           <select name="columnFamily" id="columnFamily">
             ${families.map(family => `<option value="${family}">${family}</option>`).join('')}
           </select>
     
-          <label for="rowKey">Choisir la rowkey :</label>
+          <br><br><br>
+
+          <label for="rowKey">Choisissez la période :</label>
           <select name="rowKey" id="rowKey">
             ${rowkeys.map(rowkey => `<option value="${rowkey}">${rowkey}</option>`).join('')}
           </select>
     
-          <button type="submit">Afficher les données</button>
+          <br><br><br><br><br>
+
+          <button type="submit">Afficher les decks</button>
         </form>
       </body>
       </html>
