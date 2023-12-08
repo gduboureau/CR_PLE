@@ -1,9 +1,10 @@
 const express = require('express');
 const hbase = require('hbase');
 const path = require('path');
+const{ Deck } = require('./deck'); 
 
 const app = express();
-const port = 3000;
+const port = 3004;
 
 // Configuration HBase
 const hbaseClient = hbase({
@@ -12,7 +13,7 @@ const hbaseClient = hbase({
   port: 8080,
   krb5: {
     service_principal: 'HTTP/lsd-prod-namenode-0.lsd.novalocal',
-    principal: 'vloustau@LSD.NOVALOCAL',
+    principal: 'gduboureau@LSD.NOVALOCAL',
   },
 });
 
@@ -20,7 +21,7 @@ const hbaseClient = hbase({
 function getDataFromHBase(columnFamily, rowKey) {
   return new Promise((resolve, reject) => {
     hbaseClient
-      .table('vloustau:CRdata') 
+      .table('gduboureau:CRdata') 
       .row(rowKey)
       .get(columnFamily, (error, value) => {
         if (error) {
@@ -32,11 +33,23 @@ function getDataFromHBase(columnFamily, rowKey) {
   });
 }
 
+function getColumnDescription(columnName) {
+  const columnDescriptions = {
+    nb_uniquePlayer: "Nombre unique de joueur jouant le deck",
+    best_clan : "Meilleur clan jouant le deck gagant",
+    diff_force : "Différence moyenne de force du deck gagnant",
+    nb_use : "Nombre d'utilisation du deck",
+    nb_win : "Nombre de victoire du deck",
+  };
+
+  return columnDescriptions[columnName] || columnName;
+}
+
 
 async function getHBaseMetadata() {
   return new Promise((resolve, reject) => {
     hbaseClient
-      .table('vloustau:CRdata')
+      .table('gduboureau:CRdata')
       .schema((error, schema) => {
         if (error) {
           reject(error);
@@ -48,7 +61,7 @@ async function getHBaseMetadata() {
 
           // Récupérer quelques rowkeys à titre d'exemple
           hbaseClient
-            .table('vloustau:CRdata')
+            .table('gduboureau:CRdata')
             .scan({
               limit: 3,
             }, (error, rows) => {
@@ -136,8 +149,33 @@ app.post('/getData', async (req, res) => {
   const { columnFamily, rowKey } = req.body;
 
   try {
-    // Utilisez la colonne family et la rowkey pour obtenir les données de HBase
     const data = await getDataFromHBase(columnFamily, rowKey);
+
+    const cardIdArray = [];
+    const valueArray = [];
+    data.forEach(item => {
+      const columnParts = item.column.split(':'); 
+      const cardId = columnParts[1]; 
+      if (cardId && cardId.startsWith('cardId')) {
+        cardIdArray.push({ cardId, value: item['$'] }); 
+      } else if (cardId && cardId.startsWith('value')) {
+        valueArray.push({ cardId, value: item['$'] }); 
+      }
+    });
+
+    cardIdArray.sort((a, b) => {
+      const numA = parseInt(a.cardId.split('_')[1]);
+      const numB = parseInt(b.cardId.split('_')[1]);
+      return numA - numB;
+    });
+    
+    valueArray.sort((a, b) => {
+      const numA = parseInt(a.cardId.split('_')[1]);
+      const numB = parseInt(b.cardId.split('_')[1]);
+      return numA - numB;
+    });
+
+    const selectedColumn = getColumnDescription(columnFamily) || "Statistique";
 
     // Générer le HTML avec les données
     const html =  `
@@ -149,11 +187,26 @@ app.post('/getData', async (req, res) => {
       <title>Résultat</title>
     </head>
     <body>
-      <h1>Résultat</h1>
-  
+      <h1>${selectedColumn}</h1>
       <div>
-        ${data.map(item => `<p>${item}</p>`).join('')}
-      </div>
+      <ul>
+        ${cardIdArray.map((item, index) => {
+          const deck = new Deck(item.value);
+          const card = deck.cards();
+          return `
+            <h3>Top ${index + 1}</h3>
+            <li>Identifiant du deck: ${item.value}, 
+            Valeur de la statistique: ${valueArray.find(v => v.cardId === 'value_' + item.cardId.split('_')[1]).value}</li>
+            <div style="display:inline-block;">
+              ${card.map(([name, imageUrl]) => `
+                <div style="display:inline-block; margin-right:10px;">
+                  <img src="${imageUrl}" alt="${name}" width="100" height="100">
+                  <p>${name}</p>
+                </div>`).join('')}
+            </div>`;
+        }).join('')}
+      </ul>
+    </div>
     </body>
     </html>
   `;
@@ -162,7 +215,7 @@ app.post('/getData', async (req, res) => {
     res.send(html);
   } catch (error) {
     console.error('Erreur lors de la récupération des données depuis HBase:', error);
-    res.status(500).send('Erreur lors de la récupération des données depuis HBase');
+    res.status(500).send("Aucune donnée n'a été trouvée pour cette période et cette statistique.");
   }
 });
 
