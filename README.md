@@ -66,3 +66,28 @@ Ensuite, pour voir les données dans la table spécifiée, utilisez la commande 
 ```bash
   scan 'idnum:CRdata'
 ```
+
+## II. Interface Web pour l'affichage des données
+
+### Lancement du serveur 
+Pour pouvoir lancer le serveur web, utilisez la commande suivante sur la passerelle (transférez d'abord les fichiers JS dessus) :
+
+```bash
+  node app.js
+```
+
+Il faudra télcharger au préalable les packages suivant depuis la psserelle : 
+
+
+```bash
+  npm install express
+  npm install hbase
+  npm install krb5
+```
+
+Le serveur est maintenant lancé, il suffit de lancer firefox via la commande :
+```bash
+  firefox
+```
+
+Si il y a des erreurs pour lancer le navigateur, n'oubliez pas d'utiliser la commande -X avec ssh pour vous connecter sur la passerelle.
