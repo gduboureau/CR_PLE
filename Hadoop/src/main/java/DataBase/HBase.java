@@ -16,11 +16,11 @@ public class HBase {
 
     private static final String TABLE_NAME = "gduboureau:CRdata";
 
-    private static final String FAMILY_WIN = "nb_win";
-    private static final String FAMILY_USE = "nb_use"; 
-    private static final String FAMILY_UNIQUE_PLAYER = "nb_uniquePlayer";
-    private static final String FAMILY_BEST_CLAN = "best_clan";
-    private static final String FAMILY_DIFF_FORCE = "diff_force";
+    private static final String FAMILY_WIN = "Nombre de victoires";
+    private static final String FAMILY_USE = "Nombre d'utilisations du deck"; 
+    private static final String FAMILY_UNIQUE_PLAYER = "Nombre de joueurs différent qui ont utilisé le deck au moins une fois";
+    private static final String FAMILY_BEST_CLAN = "Niveau de clan le plus élevé ou le deck a obtenu une victoire";
+    private static final String FAMILY_DIFF_FORCE = "Différence moyenne de la force du deck lorsqu'il gagne";
 
     public static void createTable(Admin admin) throws IOException {
         TableDescriptor tableDescriptor = TableDescriptorBuilder
