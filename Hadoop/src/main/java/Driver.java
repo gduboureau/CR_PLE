@@ -1,19 +1,14 @@
 import java.io.IOException;
 
 import DataBase.HBase;
-import DataCalcul.BestClanWin;
-import DataCalcul.DiffForceWin;
-import DataCalcul.UniquePlayerUse;
-import DataCalcul.UseDeck;
-import DataCalcul.WinDeck;
-import TopKCalcul.TopK;
+import DataCalcul.*;
 
 import org.apache.commons.cli.*;
 
 public class Driver {
 
     public void doMapReduce(String input, int k) throws Exception{
-        WinDeck.mainDeck(input, "DataPLE/result/WinDeck");
+        /*WinDeck.mainDeck(input, "DataPLE/result/WinDeck");
         UseDeck.JobUseDeck(input, "DataPLE/result/UseDeck");
         UniquePlayerUse.JobUniquePlayerUse(input, "DataPLE/result/UniquePlayerUse");
         BestClanWin.JobBestClanWin(input, "DataPLE/result/BestClanWin");
@@ -23,7 +18,8 @@ public class Driver {
         TopK.mainTopK("DataPLE/result/UseDeck/part-r-00000", "DataPLE/resultTopK/TopKUseDeck", k);
         TopK.mainTopK("DataPLE/result/UniquePlayerUse/part-r-00000", "DataPLE/resultTopK/TopKUniquePlayerUse", k);
         TopK.mainTopK("DataPLE/result/BestClanWin/part-r-00000", "DataPLE/resultTopK/TopKBestClanWin", k);
-        TopK.mainTopK("DataPLE/result/DiffForceWin/part-r-00000", "DataPLE/resultTopK/TopKDiffForceWin", k);
+        TopK.mainTopK("DataPLE/result/DiffForceWin/part-r-00000", "DataPLE/resultTopK/TopKDiffForceWin", k);*/
+        StatsCalculs.mainStatsCalculs(input, "DataPLE/resultStatsCalculs");
     }
 
     public void doHBase() throws IOException{
