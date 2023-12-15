@@ -109,7 +109,8 @@ public class DeckStats implements Writable{
 
     @Override
     public String toString() {
-        return "useDeck : " + useDeck + ", bestClan : " + bestClan + ", diffForceWin : " + diffForceWin + ", winDeck : " + winDeck + ", players : " + players.size();
+        /* useDeck,bestClan,diffForceWin,winDeck,nbPlayers */
+        return useDeck + "," + bestClan + "," + diffForceWin + "," + winDeck + "," + players.size();
     }
     
 }

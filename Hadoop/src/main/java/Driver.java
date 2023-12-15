@@ -1,14 +1,16 @@
 import java.io.IOException;
 
 import DataBase.HBase;
-import DataCalcul.*;
+import DataCalcul.StatsCalculs;
+import TopKCalcul.TopK;
 
 import org.apache.commons.cli.*;
 
 public class Driver {
 
     public void doMapReduce(String input, int k) throws Exception{
-        StatsCalculs.mainStatsCalculs(input, "DataPLE/resultStatsCalculs");
+        //StatsCalculs.mainStatsCalculs(input, "DataPLE/resultStatsCalculs");
+        TopK.mainTopK("DataPLE/resultStatsCalculs/part-r-00000", "DataPLE/resultTopK", k);
     }
 
     public void doHBase() throws IOException{
