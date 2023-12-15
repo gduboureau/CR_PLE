@@ -34,6 +34,7 @@ function getDataFromHBase(columnFamily, rowKey) {
   });
 }
 
+// Fonction pour obtenir la description d'une colonne
 function getColumnDescription(columnName) {
   const columnDescriptions = {
     nb_uniquePlayer: "Nombre unique de joueur jouant le deck",
@@ -43,10 +44,10 @@ function getColumnDescription(columnName) {
     nb_win: "Nombre de victoire du deck",
   };
 
-  return columnDescriptions[columnName] || columnName;
+  return columnDescriptions[columnName] || columnName; // Si la colonne n'est pas dans la liste, on retourne le nom de la colonne
 }
 
-
+// Fonction pour obtenir les données de HBase
 async function getHBaseMetadata() {
   return new Promise((resolve, reject) => {
     hbaseClient
@@ -55,12 +56,13 @@ async function getHBaseMetadata() {
         if (error) {
           reject(error);
         } else {
+          // On récupère les familles de colonnes
           const familyName = [];
           for (const column of schema.ColumnSchema) {
             familyName.push(column.name);
           }
           hbaseClient
-            .table('gduboureau:CRdata')
+            .table('gduboureau:CRdata') 
             .scan({
               limit: 3,
             }, (error, rows) => {
@@ -73,10 +75,10 @@ async function getHBaseMetadata() {
                   rowSet.add(row.key.toString('utf8'));
                 });
 
-                const rowkeys = Array.from(rowSet);
+                const rowkeys = Array.from(rowSet); 
 
 
-                resolve({ families: familyName, rowkeys });
+                resolve({ families: familyName, rowkeys }); // On retourne les familles de colonnes et les rowkeys
               }
             });
         }
@@ -146,13 +148,14 @@ async function showHomePage(req, res) {
   }
 }
 
-app.use(urlencoded({ extended: true }));
+app.use(urlencoded({ extended: true })); // Pour pouvoir récupérer les données du formulaire
 
-app.get('/', showHomePage);
+app.get('/', showHomePage); // Page principale
 
 app.post('/getData', async (req, res) => {
-  const { columnFamily, rowKey, numDecks } = req.body;
+  const { columnFamily, rowKey, numDecks } = req.body; // On récupère les paramètres du formulaire
 
+  // On vérifie que les paramètres sont bien présents
   try {
     const data = await getDataFromHBase(columnFamily, rowKey);
     const cardIdArray = [];
@@ -231,5 +234,5 @@ app.post('/getData', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is running on http://localhost:${port}`); 
 });
