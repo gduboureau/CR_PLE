@@ -51,27 +51,32 @@ public class HBase {
             String line;
             String rowKey = null;
             int cptColumn = 1;
+            // We read the file line by line
             while ((line = br.readLine()) != null) {
                 String [] token = line.split("\\s+");
                 String key = token[0];
                 String value = token[1];
                 String [] partKey = key.split("_");
-                
                 String currentRowKey;
-                if (partKey.length == 2){
+
+                if (partKey.length == 3){ // If we have a week or a month
                     currentRowKey  = partKey[0];
-                }else{
+                }else{ // If we have a global
                     currentRowKey  = partKey[0] + "_" + partKey[1];
                 }
 
+                // If we change row, we reset the column counter
                 if (!currentRowKey.equals(rowKey)) {
                     rowKey = currentRowKey;
                     cptColumn = 1;
                 }
 
-                String cardId = partKey[partKey.length - 1];
+                // We get the cardId and the statId
+                String cardId = partKey[partKey.length - 2];
+                String statId = partKey[partKey.length - 1];
+
         
-                table.put(fillTable(folderName, rowKey, cardId, value, cptColumn));
+                table.put(fillTable(statId, rowKey, cardId, value, cptColumn));
                 cptColumn++;
             }
 
@@ -82,31 +87,31 @@ public class HBase {
 
     }
 
-    private static Put fillTable(String folderName, String rowKey, String cardId, String value, int cptColumn) {
+    private static Put fillTable(String statId, String rowKey, String cardId, String value, int cptColumn) {
         Put put = new Put(Bytes.toBytes(rowKey));
-        switch (folderName) {
-            case "TopKWinDeck":
+        switch (statId) {
+            case "winDeck":
                 put.addColumn(Bytes.toBytes(FAMILY_WIN), Bytes.toBytes("cardId_" + cptColumn), Bytes.toBytes(cardId));
                 put.addColumn(Bytes.toBytes(FAMILY_WIN), Bytes.toBytes("value_" + cptColumn), Bytes.toBytes(value));
                 return put;
-            case "TopKUseDeck":
+            case "useDeck":
                 put.addColumn(Bytes.toBytes(FAMILY_USE), Bytes.toBytes("cardId_" + cptColumn), Bytes.toBytes(cardId));
                 put.addColumn(Bytes.toBytes(FAMILY_USE), Bytes.toBytes("value_" + cptColumn), Bytes.toBytes(value));
                 return put;
-            case "TopKUniquePlayerUse":
+            case "nbPlayers":
                 put.addColumn(Bytes.toBytes(FAMILY_UNIQUE_PLAYER), Bytes.toBytes("cardId_" + cptColumn), Bytes.toBytes(cardId));
                 put.addColumn(Bytes.toBytes(FAMILY_UNIQUE_PLAYER), Bytes.toBytes("value_" + cptColumn), Bytes.toBytes(value));
                 return put;
-            case "TopKBestClanWin":
+            case "diffForceWin":
                 put.addColumn(Bytes.toBytes(FAMILY_BEST_CLAN), Bytes.toBytes("cardId_" + cptColumn), Bytes.toBytes(cardId));
                 put.addColumn(Bytes.toBytes(FAMILY_BEST_CLAN), Bytes.toBytes("value_" + cptColumn), Bytes.toBytes(value));
                 return put;
-            case "TopKDiffForceWin":
+            case "bestClan":
                 put.addColumn(Bytes.toBytes(FAMILY_DIFF_FORCE), Bytes.toBytes("cardId_" + cptColumn), Bytes.toBytes(cardId));
                 put.addColumn(Bytes.toBytes(FAMILY_DIFF_FORCE), Bytes.toBytes("value_" + cptColumn), Bytes.toBytes(value));
                 return put;
             default:
-                throw new IllegalArgumentException("Folder name not recognized: " + folderName);
+                throw new IllegalArgumentException("StatId not recognized: " + statId);
         }
     }
 
@@ -132,10 +137,6 @@ public class HBase {
             createTable(admin);
 
             loadData(connection, args[0], fs);
-            loadData(connection, args[1], fs);
-            loadData(connection, args[2], fs);
-            loadData(connection, args[3], fs);
-            loadData(connection, args[4], fs);
 
         } catch (IOException e) {
             e.printStackTrace();
