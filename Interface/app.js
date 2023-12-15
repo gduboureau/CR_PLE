@@ -1,10 +1,14 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const hbase = require('hbase');
 const path = require('path');
 const { Deck } = require('./deck');
+const { table } = require('console');
 
 const app = express();
-const port = 3004;
+const port = 3002;
+
+const username = 'gduboureau';
 
 
 // Configuration HBase
@@ -14,7 +18,7 @@ const hbaseClient = hbase({
   port: 8080,
   krb5: {
     service_principal: 'HTTP/lsd-prod-namenode-0.lsd.novalocal',
-    principal: 'gduboureau@LSD.NOVALOCAL',
+    principal: username+'@LSD.NOVALOCAL',
   },
 });
 
@@ -22,7 +26,7 @@ const hbaseClient = hbase({
 function getDataFromHBase(columnFamily, rowKey) {
   return new Promise((resolve, reject) => {
     hbaseClient
-      .table('gduboureau:CRdata')
+      .table(username+':CRdata')
       .row(rowKey)
       .get(columnFamily, (error, value) => {
         if (error) {
@@ -51,7 +55,7 @@ function getColumnDescription(columnName) {
 async function getHBaseMetadata() {
   return new Promise((resolve, reject) => {
     hbaseClient
-      .table('gduboureau:CRdata')
+      .table(username+':CRdata')
       .schema((error, schema) => {
         if (error) {
           reject(error);
@@ -62,7 +66,7 @@ async function getHBaseMetadata() {
             familyName.push(column.name);
           }
           hbaseClient
-            .table('gduboureau:CRdata') 
+            .table(username+':CRdata') 
             .scan({
               limit: 3,
             }, (error, rows) => {
@@ -148,7 +152,7 @@ async function showHomePage(req, res) {
   }
 }
 
-app.use(urlencoded({ extended: true })); // Pour pouvoir récupérer les données du formulaire
+app.use(bodyParser.urlencoded({ extended: true })); // Pour pouvoir récupérer les données du formulaire
 
 app.get('/', showHomePage); // Page principale
 

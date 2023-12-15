@@ -9,20 +9,12 @@ import org.apache.commons.cli.*;
 public class Driver {
 
     public void doMapReduce(String input, int k) throws Exception{
-        //StatsCalculs.mainStatsCalculs(input, "DataPLE/resultStatsCalculs");
+        StatsCalculs.mainStatsCalculs(input, "DataPLE/resultStatsCalculs");
         TopK.mainTopK("DataPLE/resultStatsCalculs/part-r-00000", "DataPLE/resultTopK", k);
     }
 
     public void doHBase() throws IOException{
-        String[] files = { 
-                        "DataPLE/resultTopK/TopKWinDeck/part-r-00000",
-                        "DataPLE/resultTopK/TopKUseDeck/part-r-00000",
-                        "DataPLE/resultTopK/TopKUniquePlayerUse/part-r-00000",
-                        "DataPLE/resultTopK/TopKBestClanWin/part-r-00000",
-                        "DataPLE/resultTopK/TopKDiffForceWin/part-r-00000"
-                        };
-
-        HBase.mainHBase(files);
+        HBase.mainHBase("DataPLE/resultTopK/part-r-00000");
     }
 
     public static void main(String[] args) throws Exception {

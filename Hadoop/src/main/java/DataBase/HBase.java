@@ -123,7 +123,7 @@ public class HBase {
         admin.createTable(table);
     }
 
-    public static void mainHBase(String[] args) throws IOException {
+    public static void mainHBase(String input) throws IOException {
 
         Configuration config = HBaseConfiguration.create();
         Connection connection = null;
@@ -136,7 +136,7 @@ public class HBase {
             System.out.println("Connecting....");
             createTable(admin);
 
-            loadData(connection, args[0], fs);
+            loadData(connection, input, fs);
 
         } catch (IOException e) {
             e.printStackTrace();
