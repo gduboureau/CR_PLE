@@ -166,27 +166,25 @@ app.post('/getData', async (req, res) => {
     const valueArray = [];
     data.forEach(item => {
       const columnParts = item.column.split(':');
-      const cardId = columnParts[1];
-      if (cardId && cardId.startsWith('cardId')) {
-        cardIdArray.push({ cardId, value: item['$'] });
-      } else if (cardId && cardId.startsWith('value')) {
-        valueArray.push({ cardId, value: item['$'] });
+      const id = columnParts[1];
+      if (id && id.startsWith('cardId')) {
+        cardIdArray.push({ id, value: item['$'] });
+      } else if (id && id.startsWith('value')) {
+        valueArray.push({ id, value: item['$'] });
       }
     });
 
+    // On trie les valeurs de la statistique par ordre décroissant
+    valueArray.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
+
+    // On trie les decks par ordre d'apparition dans la liste de la statistique
     cardIdArray.sort((a, b) => {
-      const numA = parseInt(a.cardId.split('_')[1]);
-      const numB = parseInt(b.cardId.split('_')[1]);
-      return numA - numB;
+      const indexA = valueArray.findIndex(item => item.id === `value_${a.id.split('_')[1]}`);
+      const indexB = valueArray.findIndex(item => item.id === `value_${b.id.split('_')[1]}`);
+      return indexA - indexB;
     });
 
-    valueArray.sort((a, b) => {
-      const numA = parseInt(a.cardId.split('_')[1]);
-      const numB = parseInt(b.cardId.split('_')[1]);
-      return numA - numB;
-    });
-
-    const selectedColumn = getColumnDescription(columnFamily) || "Statistique";
+    const selectedColumn = getColumnDescription(columnFamily) || "Statistique"; 
     const numDecksToShow = parseInt(numDecks, 10) || cardIdArray.length;
 
     const html = `
@@ -204,7 +202,7 @@ app.post('/getData', async (req, res) => {
       </style>
     </head>
     <body>
-      <h1>${selectedColumn}</h1>
+      <h1>Top ${numDecksToShow} des decks selon le ${selectedColumn} pour la période ${rowKey}</h1>
       <div>
       <ul class="deck-ul">
         ${cardIdArray.slice(0, numDecksToShow).map((item, index) => {
@@ -214,7 +212,7 @@ app.post('/getData', async (req, res) => {
           <div class="card-deck-div">
             <h3>Top ${index + 1}</h3>
             <li>Identifiant du deck: ${item.value}<li> 
-            <p>Valeur de la statistique: ${valueArray.find(v => v.cardId === 'value_' + item.cardId.split('_')[1]).value}</p>
+            <p>Valeur de la statistique: ${valueArray.find(v => v.id === 'value_' + item.id.split('_')[1]).value}</p>
             <div class="deck-cards">
               ${card.map(([name, imageUrl]) => `
                 <div style="display:inline-block; margin-right:10px;">
