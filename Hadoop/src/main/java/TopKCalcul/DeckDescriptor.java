@@ -4,40 +4,28 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
-public class DeckValue implements Writable{
+public class DeckDescriptor implements WritableComparable<DeckDescriptor>{
 
     private String cards;
     private double value;
-    private String line;
 
-    public String getLine() {
-        return line;
-    }
-
-    public void setLine(String line) {
-        this.line = line;
-    }
-
-    public DeckValue(String cards, double value, String line) {
+    public DeckDescriptor(String cards, double value) {
         this.cards = cards;
         this.value = value;
-        this.line = line;
     }
 
     @Override
     public void readFields(DataInput in) throws IOException {
         this.cards = in.readUTF();
         this.value = in.readDouble();
-        this.line = in.readUTF();
     }
 
     @Override
     public void write(DataOutput out) throws IOException {
         out.writeUTF(cards);
         out.writeDouble(value);
-        out.writeUTF(line);
     }
 
     public String getCards() {
@@ -54,6 +42,17 @@ public class DeckValue implements Writable{
 
     public void setValue(double value) {
         this.value = value;
+    }
+
+
+    @Override
+    public int compareTo(DeckDescriptor o) {
+        return Double.compare(o.value, this.value);
+    }
+
+    @Override   
+    public String toString() {
+        return cards + "_" + value;
     }
     
 }

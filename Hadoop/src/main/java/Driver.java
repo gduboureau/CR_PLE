@@ -10,7 +10,7 @@ public class Driver {
 
     public void doMapReduce(String input, int k) throws Exception{
         StatsCalculs.mainStatsCalculs(input, "DataPLE/resultStatsCalculs");
-        TopK.mainTopK("DataPLE/resultStatsCalculs/part-r-00000", "DataPLE/resultTopK", k);
+        TopK.mainTopK("DataPLE/resultStatsCalculs/", "DataPLE/resultTopK", k);
     }
 
     public void doHBase() throws IOException{
