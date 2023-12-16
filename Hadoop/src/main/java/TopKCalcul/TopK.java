@@ -1,8 +1,10 @@
 package TopKCalcul;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Collections;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -19,139 +21,118 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 public class TopK {
 
-    public static class TopKWeeksMapper extends Mapper<LongWritable, Text, Text, DoubleWritable> {
+    private static String[] nameStats = {"useDeck", "bestClan", "diffForceWin", "winDeck", "nbPlayers"};
 
-        private Map<String, TreeMap<String, Double>> mapWeek; 
-        private Map<String, TreeMap<String, Double>> mapMonth;
-        private TreeMap<String, Double> mapGlobal;
+    private static void processEntry(String[] deckField, Double value, Map<KeyMap, List<DeckDescriptor>> map, int k, String nameStat){
+        DeckDescriptor deckValue = null;
+        KeyMap keymap = null;
+        if (deckField[0].equals("GLOBAL")) {
+            deckValue = new DeckDescriptor(deckField[1], value);
+            keymap = new KeyMap(deckField[0], nameStat);
+        } else {
+            deckValue = new DeckDescriptor(deckField[2], value);
+            keymap = new KeyMap(deckField[0] + "_" + deckField[1], nameStat);
+        }
+        
+        if (!map.containsKey(keymap)) {
+            map.put(keymap, new ArrayList<DeckDescriptor>());
+        }
+        map.get(keymap).add(deckValue);
+
+        Collections.sort(map.get(keymap)); 
+
+        if (map.get(keymap).size() > k) {
+            map.get(keymap).remove(map.get(keymap).size() - 1);
+        }
+    }
+
+    public static Double getMax(Iterable<DoubleWritable> values) {
+        double max = 0;
+        for (DoubleWritable value : values) {
+            max = Math.max(max, value.get());
+        }
+        return max;
+    }
+    
+
+    public static class TopKMapper extends Mapper<LongWritable, Text, Text, DoubleWritable> {
+
+        private Map<KeyMap, List<DeckDescriptor>> topKMap; 
         private int k;
 
         @Override
         public void setup(Context context) throws IOException, InterruptedException {
-            mapWeek = new HashMap<String, TreeMap<String, Double>>();
-            mapMonth = new HashMap<String, TreeMap<String, Double>>();
-            mapGlobal = new TreeMap<String, Double>(new KeyComparator());
+            topKMap = new TreeMap<>();
             this.k = context.getConfiguration().getInt("k", 10);
-        }
-
-        private void processEntry(String type, String valueType, String line, Double value, Map<String, TreeMap<String, Double>> map){
-            if (!map.containsKey(valueType)) {
-                map.put(valueType, new TreeMap<String, Double>(new KeyComparator()));
-            }
-            map.get(valueType).put(line, value);
-            if (map.get(valueType).size() > k) {
-                map.get(valueType).remove(map.get(valueType).firstKey());
-            }
         }
 
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             try {
-                String line = value.toString();
-                String[] tokens = line.split(",");
-                String winValue = tokens[1];
-                String[] type = tokens[0].split("_");
 
-                if (type[0].equals("WEEK")) {
-                    processEntry("WEEK", type[1], line, Double.parseDouble(winValue), mapWeek);
-                } else if (type[0].equals("MONTH")) {
-                    processEntry("MONTH", type[1], line, Double.parseDouble(winValue), mapMonth);
-                } else if (type[0].equals("GLOBAL")) {
-                    mapGlobal.put(line, Double.parseDouble(winValue));
-                    if (mapGlobal.size() > k) {
-                        mapGlobal.remove(mapGlobal.firstKey());
-                    }
+                String line = value.toString();
+                String[] tokens = line.split("\t");
+                String deck = tokens[0];
+                String[] stats = tokens[1].split(",");
+
+                String[] deckField = deck.split("_");
+
+
+                for (int i = 0; i < stats.length; i++) {
+                    processEntry(deckField , Double.parseDouble(stats[i]), topKMap, k, nameStats[i]);
                 }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        public void writeDescendingKey(Map<String, TreeMap<String, Double>> map, Context context) throws IOException, InterruptedException {
-            for (String type : map.keySet()) {
-                for (String key : map.get(type).descendingKeySet()) {
-                    context.write(new Text(key), new DoubleWritable(map.get(type).get(key)));
-                }
-            }
-        }
-
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
-            writeDescendingKey(mapWeek, context);
-            writeDescendingKey(mapMonth, context);
-            for (String key : mapGlobal.descendingKeySet()) {
-                context.write(new Text(key), new DoubleWritable(mapGlobal.get(key)));
+            for (KeyMap type : topKMap.keySet()) {
+                for (DeckDescriptor key : topKMap.get(type)) {
+                    context.write(new Text(type + "_" + key.getCards()), new DoubleWritable(key.getValue()));
+                }
             }
         }
     }
 
-    public static class TopKWeeksReducer extends Reducer<Text, DoubleWritable, Text, DoubleWritable> {
+    public static class TopKReducer extends Reducer<Text, DoubleWritable, Text, DoubleWritable> {
 
-        private Map<String, TreeMap<String, Double>> mapWeek;
-        private Map<String, TreeMap<String, Double>> mapMonth;
-        private TreeMap<String, Double> mapGlobal;
+        private Map<KeyMap, List<DeckDescriptor>> topKMap;
         private int k;
 
         @Override
         public void setup(Context context) throws IOException, InterruptedException {
-            mapWeek = new HashMap<String, TreeMap<String, Double>>();
-            mapMonth = new HashMap<String, TreeMap<String, Double>>();
-            mapGlobal = new TreeMap<String, Double>(new KeyComparator());
+            topKMap = new TreeMap<>();
             this.k = context.getConfiguration().getInt("k", 10);
         }
 
-        private void processMapData(Map<String, TreeMap<String, Double>> mapData, String type, String line, double max) {
-            if (!mapData.containsKey(type)) {
-                mapData.put(type, new TreeMap<String, Double>(new KeyComparator()));
-            }
-    
-            mapData.get(type).put(line, max);
-            if (mapData.get(type).size() > k) {
-                mapData.get(type).remove((Object) mapData.get(type).firstKey());
-            }
-        }
-
-        private double getMaxValue(Iterable<DoubleWritable> values) {
-            double max = 0;
-            for (DoubleWritable value : values) {
-                max = Math.max(max, value.get());
-            }
-            return max;
-        }
-
+        @Override
         public void reduce(Text key, Iterable<DoubleWritable> values, Context context) throws IOException, InterruptedException {
             
             String line = key.toString();
-            String[] tokens = line.split("_");
-            double max = getMaxValue(values);
-
-            if (tokens[0].equals("WEEK")){
-                processMapData(mapWeek, tokens[1], line, max);
-            }else if (tokens[0].equals("MONTH")){
-                processMapData(mapMonth, tokens[1], line, max);
-            }else if (tokens[0].equals("GLOBAL")){
-                mapGlobal.put(line, max);
-                if (mapGlobal.size() > k) {
-                    mapGlobal.remove(mapGlobal.firstKey());
-                }
-            }
-        }
-
-        public void writeDescendingKey(Map<String, TreeMap<String, Double>> map, Context context) throws IOException, InterruptedException {
-            for (String type : map.keySet()) {
-                for (String key : map.get(type).descendingKeySet()) {
-                    String[] tokens = key.split(",");
-                    context.write(new Text(tokens[0]), new DoubleWritable(map.get(type).get(key)));
+            String[] deckField = line.split("_");
+            //deckField = GLOBAL_useDeck_062223253f5f6669
+            //deckField = WEEK_44_useDeck_062223253f5f6669
+            for (DoubleWritable val : values) {
+                for (int i = 0; i < nameStats.length; i++) {
+                    if (deckField.length == 3) {
+                        String[] newDeckField = {deckField[0], deckField[2], deckField[1]};
+                        processEntry(newDeckField, val.get(), topKMap, k, deckField[1]);
+                    } else {
+                        String[] newDeckField = {deckField[0], deckField[1], deckField[3], deckField[2]};
+                        processEntry(newDeckField, val.get(), topKMap, k, deckField[2]);
+                    }
                 }
             }
         }
 
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
-            writeDescendingKey(mapWeek, context);
-            writeDescendingKey(mapMonth, context);
-            for (String key : mapGlobal.descendingKeySet()) {
-                String tokens[] = key.split(",");
-                context.write(new Text(tokens[0]), new DoubleWritable(mapGlobal.get(key)));
+            for (KeyMap type : topKMap.keySet()) {
+                for (DeckDescriptor key : topKMap.get(type)) {
+                    context.write(new Text(type + "_" + key.getCards()), new DoubleWritable(key.getValue()));
+                }
             }
         }
     }
@@ -162,10 +143,10 @@ public class TopK {
         Job job = Job.getInstance(conf, "TopKWeeks");
         job.setNumReduceTasks(1);
         job.setJarByClass(TopK.class);
-        job.setMapperClass(TopKWeeksMapper.class);
+        job.setMapperClass(TopKMapper.class);
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(DoubleWritable.class);
-        job.setReducerClass(TopKWeeksReducer.class);
+        job.setReducerClass(TopKReducer.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(DoubleWritable.class);
         job.setOutputFormatClass(TextOutputFormat.class);

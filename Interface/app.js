@@ -1,10 +1,14 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const hbase = require('hbase');
 const path = require('path');
 const { Deck } = require('./deck');
+const { table } = require('console');
 
 const app = express();
-const port = 3004;
+const port = 3002;
+
+const username = 'gduboureau';
 
 
 // Configuration HBase
@@ -14,7 +18,7 @@ const hbaseClient = hbase({
   port: 8080,
   krb5: {
     service_principal: 'HTTP/lsd-prod-namenode-0.lsd.novalocal',
-    principal: 'gduboureau@LSD.NOVALOCAL',
+    principal: username+'@LSD.NOVALOCAL',
   },
 });
 
@@ -22,7 +26,7 @@ const hbaseClient = hbase({
 function getDataFromHBase(columnFamily, rowKey) {
   return new Promise((resolve, reject) => {
     hbaseClient
-      .table('gduboureau:CRdata')
+      .table(username+':CRdata')
       .row(rowKey)
       .get(columnFamily, (error, value) => {
         if (error) {
@@ -34,6 +38,7 @@ function getDataFromHBase(columnFamily, rowKey) {
   });
 }
 
+// Fonction pour obtenir la description d'une colonne
 function getColumnDescription(columnName) {
   const columnDescriptions = {
     nb_uniquePlayer: "Nombre unique de joueur jouant le deck",
@@ -43,24 +48,25 @@ function getColumnDescription(columnName) {
     nb_win: "Nombre de victoire du deck",
   };
 
-  return columnDescriptions[columnName] || columnName;
+  return columnDescriptions[columnName] || columnName; // Si la colonne n'est pas dans la liste, on retourne le nom de la colonne
 }
 
-
+// Fonction pour obtenir les données de HBase
 async function getHBaseMetadata() {
   return new Promise((resolve, reject) => {
     hbaseClient
-      .table('gduboureau:CRdata')
+      .table(username+':CRdata')
       .schema((error, schema) => {
         if (error) {
           reject(error);
         } else {
+          // On récupère les familles de colonnes
           const familyName = [];
           for (const column of schema.ColumnSchema) {
             familyName.push(column.name);
           }
           hbaseClient
-            .table('gduboureau:CRdata')
+            .table(username+':CRdata') 
             .scan({
               limit: 3,
             }, (error, rows) => {
@@ -73,10 +79,10 @@ async function getHBaseMetadata() {
                   rowSet.add(row.key.toString('utf8'));
                 });
 
-                const rowkeys = Array.from(rowSet);
+                const rowkeys = Array.from(rowSet); 
 
 
-                resolve({ families: familyName, rowkeys });
+                resolve({ families: familyName, rowkeys }); // On retourne les familles de colonnes et les rowkeys
               }
             });
         }
@@ -146,40 +152,39 @@ async function showHomePage(req, res) {
   }
 }
 
-app.use(urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true })); // Pour pouvoir récupérer les données du formulaire
 
-app.get('/', showHomePage);
+app.get('/', showHomePage); // Page principale
 
 app.post('/getData', async (req, res) => {
-  const { columnFamily, rowKey, numDecks } = req.body;
+  const { columnFamily, rowKey, numDecks } = req.body; // On récupère les paramètres du formulaire
 
+  // On vérifie que les paramètres sont bien présents
   try {
     const data = await getDataFromHBase(columnFamily, rowKey);
     const cardIdArray = [];
     const valueArray = [];
     data.forEach(item => {
       const columnParts = item.column.split(':');
-      const cardId = columnParts[1];
-      if (cardId && cardId.startsWith('cardId')) {
-        cardIdArray.push({ cardId, value: item['$'] });
-      } else if (cardId && cardId.startsWith('value')) {
-        valueArray.push({ cardId, value: item['$'] });
+      const id = columnParts[1];
+      if (id && id.startsWith('cardId')) {
+        cardIdArray.push({ id, value: item['$'] });
+      } else if (id && id.startsWith('value')) {
+        valueArray.push({ id, value: item['$'] });
       }
     });
 
+    // On trie les valeurs de la statistique par ordre décroissant
+    valueArray.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
+
+    // On trie les decks par ordre d'apparition dans la liste de la statistique
     cardIdArray.sort((a, b) => {
-      const numA = parseInt(a.cardId.split('_')[1]);
-      const numB = parseInt(b.cardId.split('_')[1]);
-      return numA - numB;
+      const indexA = valueArray.findIndex(item => item.id === `value_${a.id.split('_')[1]}`);
+      const indexB = valueArray.findIndex(item => item.id === `value_${b.id.split('_')[1]}`);
+      return indexA - indexB;
     });
 
-    valueArray.sort((a, b) => {
-      const numA = parseInt(a.cardId.split('_')[1]);
-      const numB = parseInt(b.cardId.split('_')[1]);
-      return numA - numB;
-    });
-
-    const selectedColumn = getColumnDescription(columnFamily) || "Statistique";
+    const selectedColumn = getColumnDescription(columnFamily) || "Statistique"; 
     const numDecksToShow = parseInt(numDecks, 10) || cardIdArray.length;
 
     const html = `
@@ -197,7 +202,7 @@ app.post('/getData', async (req, res) => {
       </style>
     </head>
     <body>
-      <h1>${selectedColumn}</h1>
+      <h1>Top ${numDecksToShow} des decks selon le ${selectedColumn} pour la période ${rowKey}</h1>
       <div>
       <ul class="deck-ul">
         ${cardIdArray.slice(0, numDecksToShow).map((item, index) => {
@@ -207,7 +212,7 @@ app.post('/getData', async (req, res) => {
           <div class="card-deck-div">
             <h3>Top ${index + 1}</h3>
             <li>Identifiant du deck: ${item.value}<li> 
-            <p>Valeur de la statistique: ${valueArray.find(v => v.cardId === 'value_' + item.cardId.split('_')[1]).value}</p>
+            <p>Valeur de la statistique: ${valueArray.find(v => v.id === 'value_' + item.id.split('_')[1]).value}</p>
             <div class="deck-cards">
               ${card.map(([name, imageUrl]) => `
                 <div style="display:inline-block; margin-right:10px;">
@@ -231,5 +236,5 @@ app.post('/getData', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is running on http://localhost:${port}`); 
 });

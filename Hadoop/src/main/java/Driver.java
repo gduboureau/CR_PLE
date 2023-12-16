@@ -1,11 +1,7 @@
 import java.io.IOException;
 
 import DataBase.HBase;
-import DataCalcul.BestClanWin;
-import DataCalcul.DiffForceWin;
-import DataCalcul.UniquePlayerUse;
-import DataCalcul.UseDeck;
-import DataCalcul.WinDeck;
+import DataCalcul.StatsCalculs;
 import TopKCalcul.TopK;
 
 import org.apache.commons.cli.*;
@@ -13,29 +9,12 @@ import org.apache.commons.cli.*;
 public class Driver {
 
     public void doMapReduce(String input, int k) throws Exception{
-        WinDeck.mainDeck(input, "DataPLE/result/WinDeck");
-        UseDeck.JobUseDeck(input, "DataPLE/result/UseDeck");
-        UniquePlayerUse.JobUniquePlayerUse(input, "DataPLE/result/UniquePlayerUse");
-        BestClanWin.JobBestClanWin(input, "DataPLE/result/BestClanWin");
-        DiffForceWin.JobDiffForceWin(input, "DataPLE/result/DiffForceWin");
-
-        TopK.mainTopK("DataPLE/result/WinDeck/part-r-00000", "DataPLE/resultTopK/TopKWinDeck", k);
-        TopK.mainTopK("DataPLE/result/UseDeck/part-r-00000", "DataPLE/resultTopK/TopKUseDeck", k);
-        TopK.mainTopK("DataPLE/result/UniquePlayerUse/part-r-00000", "DataPLE/resultTopK/TopKUniquePlayerUse", k);
-        TopK.mainTopK("DataPLE/result/BestClanWin/part-r-00000", "DataPLE/resultTopK/TopKBestClanWin", k);
-        TopK.mainTopK("DataPLE/result/DiffForceWin/part-r-00000", "DataPLE/resultTopK/TopKDiffForceWin", k);
+        StatsCalculs.mainStatsCalculs(input, "DataPLE/resultStatsCalculs");
+        TopK.mainTopK("DataPLE/resultStatsCalculs/", "DataPLE/resultTopK", k);
     }
 
     public void doHBase() throws IOException{
-        String[] files = { 
-                        "DataPLE/resultTopK/TopKWinDeck/part-r-00000",
-                        "DataPLE/resultTopK/TopKUseDeck/part-r-00000",
-                        "DataPLE/resultTopK/TopKUniquePlayerUse/part-r-00000",
-                        "DataPLE/resultTopK/TopKBestClanWin/part-r-00000",
-                        "DataPLE/resultTopK/TopKDiffForceWin/part-r-00000"
-                        };
-
-        HBase.mainHBase(files);
+        HBase.mainHBase("DataPLE/resultTopK/part-r-00000");
     }
 
     public static void main(String[] args) throws Exception {
