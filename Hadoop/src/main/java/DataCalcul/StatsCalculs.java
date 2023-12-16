@@ -21,19 +21,42 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.codehaus.jettison.json.JSONObject;
 
 
+/**
+ * The StatsCalculs class is responsible for calculating statistics based on input data.
+ * It contains a mapper and reducer class for processing the data and generating the output.
+ */
 public class StatsCalculs {
 
+  /**
+   * Mapper class for calculating statistics in the Hadoop job.
+   * This class extends the Mapper class and overrides the map() method to process input key-value pairs.
+   * The input key is of type LongWritable and the input value is of type Text.
+   * The output key is of type Text and the output value is of type DeckStats.
+   */
+  /**
+   * Mapper class for calculating statistics.
+   * This class extends the Mapper class and overrides the map() method to process input key-value pairs and generate intermediate key-value pairs for statistics calculation.
+   */
   public static class StatsCalculsMapper extends Mapper<LongWritable, Text, Text, DeckStats> {
-
+    /**
+     * Processes input key-value pairs and generates intermediate key-value pairs for statistics calculation.
+     *
+     * @param key     The input key.
+     * @param value   The input value.
+     * @param context The context object for writing intermediate key-value pairs.
+     * @throws IOException          If an I/O error occurs.
+     * @throws InterruptedException If the thread is interrupted.
+     */
+    @Override
     public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-      
-      try {
 
+      try {
+        // Parse the input value as a JSON object
         JSONObject obj = new JSONObject(value.toString());
         int win = Integer.parseInt(obj.getString("win"));
 
         if (obj.has("cards") && obj.has("cards2") && obj.has("date")) {
-
+          // Sort the deck cards
           String cards = SortedDeck.sortDeck(obj.getString("cards"));
           String cards2 = SortedDeck.sortDeck(obj.getString("cards2"));
 
@@ -79,25 +102,13 @@ public class StatsCalculs {
             deckStats2.setDiffForceWin(diffForceWin);
           }
 
-
-          // for global
+          // Write intermediate key-value pairs for global, month, and week statistics
           context.write(new Text("GLOBAL_" + cards), deckStats1);
-
-          // for month
           context.write(new Text("MONTH_" + month + "_" + cards), deckStats1);
-
-          // for week
           context.write(new Text("WEEK_" + week + "_" + cards), deckStats1);
-
-          // for global
           context.write(new Text("GLOBAL_" + cards2), deckStats2);
-
-          // for month
           context.write(new Text("MONTH_" + month + "_" + cards2), deckStats2);
-
-          // for week
           context.write(new Text("WEEK_" + week + "_" + cards2), deckStats2);
-
         }
 
       } catch (Exception e) {
@@ -106,8 +117,24 @@ public class StatsCalculs {
     }
   }
 
+  /**
+   * Reducer class for calculating statistics in the Hadoop MapReduce job.
+   * It takes a Text key, Iterable of DeckStats values, and Context as input,
+   * and emits a Text key and DeckStats value as output.
+   */
   public static class StatsCalculsReducer extends Reducer<Text, DeckStats, Text, DeckStats> {
 
+    /**
+     * Reducer function that calculates the statistics for each key.
+     * It iterates over the DeckStats values, aggregates the data, and emits the result.
+     *
+     * @param key      The input key.
+     * @param values   The Iterable of DeckStats values.
+     * @param context  The Context object for emitting the output.
+     * @throws IOException          If an I/O error occurs.
+     * @throws InterruptedException If the thread is interrupted.
+     */
+    @Override
     public void reduce(Text key, Iterable<DeckStats> values, Context context) throws IOException, InterruptedException {
 
       DeckStats deckStats = new DeckStats();
