@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * This class represents the HBase database and provides methods for creating tables, loading data, and performing operations on the database.
+ */
 public class HBase {
 
     private static final String TABLE_NAME = "gduboureau:CRdata";
@@ -22,6 +25,12 @@ public class HBase {
     private static final String FAMILY_BEST_CLAN = "Niveau de clan le plus élevé ou le deck a obtenu une victoire";
     private static final String FAMILY_DIFF_FORCE = "Différence moyenne de la force du deck lorsqu'il gagne";
 
+    /**
+     * Creates the HBase table with the specified column families.
+     * 
+     * @param admin The HBase admin object.
+     * @throws IOException If an I/O error occurs.
+     */
     public static void createTable(Admin admin) throws IOException {
         TableDescriptor tableDescriptor = TableDescriptorBuilder
                 .newBuilder(TableName.valueOf(TABLE_NAME))
@@ -36,6 +45,15 @@ public class HBase {
         System.out.println("Done....");
     }
 
+    /**
+     * Loads data from a file into the HBase table.
+     * 
+     * @param connection The HBase connection object.
+     * @param filepath The path of the file to load data from.
+     * @param fs The Hadoop file system object.
+     * @throws FileNotFoundException If the file is not found.
+     * @throws IOException If an I/O error occurs.
+     */
     private static void loadData(Connection connection, String filepath, FileSystem fs) throws FileNotFoundException, IOException{
         
         System.out.println("Loading data from " + filepath + " ...");
@@ -87,6 +105,16 @@ public class HBase {
 
     }
 
+    /**
+     * Fills a Put object with the specified values.
+     * 
+     * @param statId The statId value.
+     * @param rowKey The row key value.
+     * @param cardId The cardId value.
+     * @param value The value.
+     * @param cptColumn The column counter.
+     * @return The filled Put object.
+     */
     private static Put fillTable(String statId, String rowKey, String cardId, String value, int cptColumn) {
         Put put = new Put(Bytes.toBytes(rowKey));
         switch (statId) {
@@ -115,6 +143,13 @@ public class HBase {
         }
     }
 
+    /**
+     * Creates a new table or overwrites an existing table.
+     * 
+     * @param admin The HBase admin object.
+     * @param table The table descriptor.
+     * @throws IOException If an I/O error occurs.
+     */
     public static void createOrOverwrite(Admin admin, TableDescriptor table) throws IOException {
         if (admin.tableExists(table.getTableName())) {
             admin.disableTable(table.getTableName());
@@ -123,6 +158,12 @@ public class HBase {
         admin.createTable(table);
     }
 
+    /**
+     * The main method to execute the HBase operations.
+     * 
+     * @param input The input file path.
+     * @throws IOException If an I/O error occurs.
+     */
     public static void mainHBase(String input) throws IOException {
 
         Configuration config = HBaseConfiguration.create();
@@ -149,5 +190,4 @@ public class HBase {
     }
     
 }
-
  
