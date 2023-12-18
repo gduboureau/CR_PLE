@@ -65,8 +65,8 @@ public class HBase {
                 }
 
                 // We get the cardId and the statId
-                String cardId = partKey[partKey.length - 2];
-                String statId = partKey[partKey.length - 1];
+                String cardId = partKey[partKey.length - 1];
+                String statId = partKey[partKey.length - 2];
 
                 // System.out.println("RowKey: " + rowKey + " CardId: " + cardId + " StatId: " + statId + " Value: " + value);
                 table.put(fillTable(statId, rowKey, cardId, value));

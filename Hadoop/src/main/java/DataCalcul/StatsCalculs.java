@@ -135,7 +135,7 @@ public class StatsCalculs {
   public static void mainStatsCalculs(String input, String output) throws Exception {
     Configuration conf = new Configuration();
     Job job = Job.getInstance(conf, "StatsCalculs");
-    job.setNumReduceTasks(1);
+    job.setNumReduceTasks(5);
     job.setJarByClass(StatsCalculs.class);
     job.setMapperClass(StatsCalculsMapper.class);
     job.setReducerClass(StatsCalculsReducer.class);
