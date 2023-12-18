@@ -164,8 +164,6 @@ app.post('/getData', async (req, res) => {
     dataArray.sort((a, b) => b.value - a.value);
 
     const numDecksToShow = parseInt(numDecks, 10) || dataArray.length;
-    console.log(numDecksToShow)
-    console.log(dataArray.length)
 
     const html = `
     <!DOCTYPE html>
@@ -190,7 +188,6 @@ app.post('/getData', async (req, res) => {
             const card = deck.cards();
             return `
               <div class="card-deck-div">
-                ${console.log(index)}
                 <h3>Top ${index + 1}</h3>
                 <li>Identifiant du deck: ${item.cardId}<li> 
                 <p>Valeur de la statistique: ${item.value}</p>
