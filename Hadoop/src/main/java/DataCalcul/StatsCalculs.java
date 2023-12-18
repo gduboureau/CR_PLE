@@ -60,6 +60,10 @@ public class StatsCalculs {
           String cards = SortedDeck.sortDeck(obj.getString("cards"));
           String cards2 = SortedDeck.sortDeck(obj.getString("cards2"));
 
+          if (cards.length() > 16 || cards2.length() > 16) { // Ignore decks with more than 8 cards
+            return;
+          }
+
           String date = obj.getString("date");
 
           LocalDateTime dateTime = LocalDateTime.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
