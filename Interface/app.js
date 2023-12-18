@@ -8,7 +8,7 @@ const { table } = require('console');
 const app = express();
 const port = 3002;
 
-const username = 'gduboureau';
+const username = 'vloustau';
 
 
 // Configuration HBase
