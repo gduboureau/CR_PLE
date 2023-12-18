@@ -38,19 +38,6 @@ function getDataFromHBase(columnFamily, rowKey) {
   });
 }
 
-// Fonction pour obtenir la description d'une colonne
-function getColumnDescription(columnName) {
-  const columnDescriptions = {
-    nb_uniquePlayer: "Nombre unique de joueur jouant le deck",
-    best_clan: "Meilleur clan jouant le deck gagant",
-    diff_force: "Différence moyenne de force du deck gagnant",
-    nb_use: "Nombre d'utilisation du deck",
-    nb_win: "Nombre de victoire du deck",
-  };
-
-  return columnDescriptions[columnName] || columnName; // Si la colonne n'est pas dans la liste, on retourne le nom de la colonne
-}
-
 // Fonction pour obtenir les données de HBase
 async function getHBaseMetadata() {
   return new Promise((resolve, reject) => {
@@ -162,30 +149,23 @@ app.post('/getData', async (req, res) => {
   // On vérifie que les paramètres sont bien présents
   try {
     const data = await getDataFromHBase(columnFamily, rowKey);
-    const cardIdArray = [];
-    const valueArray = [];
+    const dataArray = [];
     data.forEach(item => {
       const columnParts = item.column.split(':');
-      const id = columnParts[1];
-      if (id && id.startsWith('cardId')) {
-        cardIdArray.push({ id, value: item['$'] });
-      } else if (id && id.startsWith('value')) {
-        valueArray.push({ id, value: item['$'] });
+      const cardId = columnParts[1];
+      const value = item['$'];
+  
+      if (cardId && value) {
+        dataArray.push({ cardId, value: parseFloat(value) });
       }
     });
+  
+    // Trier le tableau d'objets en fonction des valeurs (de manière décroissante)
+    dataArray.sort((a, b) => b.value - a.value);
 
-    // On trie les valeurs de la statistique par ordre décroissant
-    valueArray.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
-
-    // On trie les decks par ordre d'apparition dans la liste de la statistique
-    cardIdArray.sort((a, b) => {
-      const indexA = valueArray.findIndex(item => item.id === `value_${a.id.split('_')[1]}`);
-      const indexB = valueArray.findIndex(item => item.id === `value_${b.id.split('_')[1]}`);
-      return indexA - indexB;
-    });
-
-    const selectedColumn = getColumnDescription(columnFamily) || "Statistique"; 
-    const numDecksToShow = parseInt(numDecks, 10) || cardIdArray.length;
+    const numDecksToShow = parseInt(numDecks, 10) || dataArray.length;
+    console.log(numDecksToShow)
+    console.log(dataArray.length)
 
     const html = `
     <!DOCTYPE html>
@@ -202,28 +182,29 @@ app.post('/getData', async (req, res) => {
       </style>
     </head>
     <body>
-      <h1>Top ${numDecksToShow} des decks selon le ${selectedColumn} pour la période ${rowKey}</h1>
+      <h1>Top ${numDecksToShow} des decks selon le ${columnFamily} pour la période ${rowKey}</h1>
       <div>
-      <ul class="deck-ul">
-        ${cardIdArray.slice(0, numDecksToShow).map((item, index) => {
-      const deck = new Deck(item.value);
-      const card = deck.cards();
-      return `
-          <div class="card-deck-div">
-            <h3>Top ${index + 1}</h3>
-            <li>Identifiant du deck: ${item.value}<li> 
-            <p>Valeur de la statistique: ${valueArray.find(v => v.id === 'value_' + item.id.split('_')[1]).value}</p>
-            <div class="deck-cards">
-              ${card.map(([name, imageUrl]) => `
-                <div style="display:inline-block; margin-right:10px;">
-                  <img src="${imageUrl}" alt="${name}" width="100" height="100">
-                  <p>${name}</p>
-                </div>`).join('')}
-            </div>
-          </div>`;
-    }).join('')}
-      </ul>
-    </div>
+        <ul class="deck-ul">
+          ${dataArray.slice(0, numDecksToShow).map((item, index) => {
+            const deck = new Deck(item.cardId);
+            const card = deck.cards();
+            return `
+              <div class="card-deck-div">
+                ${console.log(index)}
+                <h3>Top ${index + 1}</h3>
+                <li>Identifiant du deck: ${item.cardId}<li> 
+                <p>Valeur de la statistique: ${item.value}</p>
+                <div class="deck-cards">
+                  ${card.map(([name, imageUrl]) => `
+                    <div style="display:inline-block; margin-right:10px;">
+                      <img src="${imageUrl}" alt="${name}" width="100" height="100">
+                      <p>${name}</p>
+                    </div>`).join('')}
+                </div>
+              </div>`;
+          }).join('')}
+        </ul>
+      </div>
     </body>
     </html>
   `;

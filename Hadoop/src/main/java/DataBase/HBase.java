@@ -20,11 +20,11 @@ public class HBase {
 
     // Constants for table name and column families
     private static final String TABLE_NAME = "vloustau:CRdata";
-    private static final String FAMILY_WIN = "nb_win";
-    private static final String FAMILY_USE = "nb_use";
-    private static final String FAMILY_UNIQUE_PLAYER = "nb_uniquePlayer";
-    private static final String FAMILY_BEST_CLAN = "best_clan";
-    private static final String FAMILY_DIFF_FORCE = "diff_force";
+    private static final String FAMILY_WIN = "Nombre de victoire du deck";
+    private static final String FAMILY_USE = "Nombre d'utilisation du deck";
+    private static final String FAMILY_UNIQUE_PLAYER = "Nombre unique de joueur jouant le deck";
+    private static final String FAMILY_BEST_CLAN = "Meilleur clan jouant le deck gagant";
+    private static final String FAMILY_DIFF_FORCE = "Différence moyenne de force du deck gagnant";
 
     /**
      * Creates a table in the HBase database with the specified column families.
