@@ -32,10 +32,10 @@ Ensuite, utilisez la commande suivante pour lancer le programme MapReduce avec Y
 ```
 
 #### Options disponibles
-* -__mapreduce [file]__: Effectue uniquement les traitements MapReduce.
+* -__mapreduce__ : Effectue uniquement les traitements MapReduce.
 * -__hbase__: Initialise uniquement la base de données HBase.
 * -__k [valeur]__: Spécifie la valeur de k pour le traitement TopK (10 par défaut).
-* -__default [file]__: Effectue les deux traitements.
+* -__default__: Effectue les deux traitements.
 * -__h__: Affiche l'aide
 
 Assurez-vous d'exécuter la commande suivante pour configurer les dépendances HBase :
@@ -50,8 +50,8 @@ Si vous choisissez d'initialiser la base de données, modifiez l'ID utilisateur 
 
 Après l'exécution, un dossier "PLE" est créé avec deux sous-dossiers :
 
-* __resultat_brut__ : Contient les résultats bruts du traitement MapReduce.
-* __resultTopK__ : Contient les résultats finaux avec la sélection TopK.
+* __resultStatsCalculs__ : Contient toutes les statistiques du fichier original.
+* __resultTopK__ : Contient le topK de chaque statistique.
 
 ### Visualisation de la base de données HBase
 
@@ -66,3 +66,32 @@ Ensuite, pour voir les données dans la table spécifiée, utilisez la commande 
 ```bash
   scan 'idnum:CRdata'
 ```
+
+## II. Interface Web pour l'affichage des données
+
+### Lancement du serveur 
+Pour pouvoir lancer le serveur web, utilisez la commande suivante sur la passerelle (transférez d'abord les fichiers JS dessus) :
+
+```bash
+  node app.js
+```
+
+Il faudra télécharger au préalable les packages suivant depuis la passerelle : 
+
+
+```bash
+  npm install express
+  npm install hbase
+  npm install krb5
+```
+
+Le serveur est maintenant lancé, il suffit de lancer firefox via la commande :
+```bash
+  firefox
+```
+
+Si il y a des erreurs pour lancer le navigateur, n'oubliez pas d'utiliser la commande -X avec ssh pour vous connecter sur la passerelle.
+
+### Demo
+
+![GIF d'exemple](demo.gif)

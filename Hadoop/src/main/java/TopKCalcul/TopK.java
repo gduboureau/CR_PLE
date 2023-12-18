@@ -19,14 +19,27 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
+/**
+ * This class implements a MapReduce job to find the top K values for different statistics in a dataset.
+ */
 public class TopK {
 
     private static String[] nameStats = {"useDeck", "bestClan", "diffForceWin", "winDeck", "nbPlayers"};
+    private static final String GLOBAL_PREFIX = "GLOBAL";
 
+    /**
+     * Processes an entry by adding it to the map and keeping only the top K values.
+     *
+     * @param deckField The deck field.
+     * @param value The value.
+     * @param map The map to store the entries.
+     * @param k The number of top values to keep.
+     * @param nameStat The name of the statistic.
+     */
     private static void processEntry(String[] deckField, Double value, Map<KeyMap, List<DeckDescriptor>> map, int k, String nameStat){
         DeckDescriptor deckValue = null;
         KeyMap keymap = null;
-        if (deckField[0].equals("GLOBAL")) {
+        if (deckField[0].equals(GLOBAL_PREFIX)) {
             deckValue = new DeckDescriptor(deckField[1], value);
             keymap = new KeyMap(deckField[0], nameStat);
         } else {
@@ -34,9 +47,7 @@ public class TopK {
             keymap = new KeyMap(deckField[0] + "_" + deckField[1], nameStat);
         }
         
-        if (!map.containsKey(keymap)) {
-            map.put(keymap, new ArrayList<DeckDescriptor>());
-        }
+        map.putIfAbsent(keymap, new ArrayList<DeckDescriptor>());
         map.get(keymap).add(deckValue);
 
         Collections.sort(map.get(keymap)); 
@@ -45,16 +56,11 @@ public class TopK {
             map.get(keymap).remove(map.get(keymap).size() - 1);
         }
     }
-
-    public static Double getMax(Iterable<DoubleWritable> values) {
-        double max = 0;
-        for (DoubleWritable value : values) {
-            max = Math.max(max, value.get());
-        }
-        return max;
-    }
     
 
+    /**
+     * This class represents the mapper for the TopK job.
+     */
     public static class TopKMapper extends Mapper<LongWritable, Text, Text, DoubleWritable> {
 
         private Map<KeyMap, List<DeckDescriptor>> topKMap; 
@@ -66,6 +72,13 @@ public class TopK {
             this.k = context.getConfiguration().getInt("k", 10);
         }
 
+        /**
+         * Maps the input key/value pair to intermediate key/value pairs.
+         *
+         * @param key The input key.
+         * @param value The input value.
+         * @param context The context object for the mapper.
+         */
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             try {
 
@@ -96,6 +109,9 @@ public class TopK {
         }
     }
 
+    /**
+     * This class represents the reducer for the TopK job.
+     */
     public static class TopKReducer extends Reducer<Text, DoubleWritable, Text, DoubleWritable> {
 
         private Map<KeyMap, List<DeckDescriptor>> topKMap;
@@ -107,23 +123,31 @@ public class TopK {
             this.k = context.getConfiguration().getInt("k", 10);
         }
 
+        /**
+         * Reduces the intermediate key/value pairs to the final output key/value pairs.
+         *
+         * @param key The intermediate key.
+         * @param values The list of intermediate values.
+         * @param context The context object for the reducer.
+         */
         @Override
         public void reduce(Text key, Iterable<DoubleWritable> values, Context context) throws IOException, InterruptedException {
+
+            double max = 0;
+            for (DoubleWritable value : values) {
+                max = Math.max(max, value.get());
+            }
             
             String line = key.toString();
             String[] deckField = line.split("_");
             //deckField = GLOBAL_useDeck_062223253f5f6669
             //deckField = WEEK_44_useDeck_062223253f5f6669
-            for (DoubleWritable val : values) {
-                for (int i = 0; i < nameStats.length; i++) {
-                    if (deckField.length == 3) {
-                        String[] newDeckField = {deckField[0], deckField[2], deckField[1]};
-                        processEntry(newDeckField, val.get(), topKMap, k, deckField[1]);
-                    } else {
-                        String[] newDeckField = {deckField[0], deckField[1], deckField[3], deckField[2]};
-                        processEntry(newDeckField, val.get(), topKMap, k, deckField[2]);
-                    }
-                }
+            if (deckField[0].equals(GLOBAL_PREFIX)) {
+                String[] newDeckField = {deckField[0], deckField[2], deckField[1]};
+                processEntry(newDeckField, max, topKMap, k, deckField[1]);
+            } else {
+                String[] newDeckField = {deckField[0], deckField[1], deckField[3], deckField[2]};
+                processEntry(newDeckField, max, topKMap, k, deckField[2]);
             }
         }
 
@@ -137,6 +161,14 @@ public class TopK {
         }
     }
 
+    /**
+     * Runs the TopK job.
+     *
+     * @param input The input path.
+     * @param output The output path.
+     * @param k The number of top values to keep.
+     * @throws Exception If an error occurs during the job execution.
+     */
     public static void mainTopK(String input, String output, int k) throws Exception {
         Configuration conf = new Configuration();
         conf.setInt("k", k);
