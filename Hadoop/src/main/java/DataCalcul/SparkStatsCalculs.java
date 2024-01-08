@@ -23,16 +23,17 @@ public class SparkStatsCalculs {
            JavaPairRDD<String, List<String>> combinationsRDD = inputRDD.flatMapToPair(record -> {
 
             String deck = record._1.toString();
+            String deckName;
 
             if (deck.startsWith("WEEK") || deck.startsWith("MONTH")) {
-                deck.split("_")[2].trim();
+                deckName = deck.split("_")[2].trim();
             }else{
-                deck.split("_")[1].trim();
+                deckName = deck.split("_")[1].trim();
             }
 
             List<String> cards = new ArrayList<>();
-            for (int i = 0; i < deck.length(); i += 2) {
-                String cardCode = deck.substring(i, i + 2);
+            for (int i = 0; i < deckName.length(); i += 2) {
+                String cardCode = deckName.substring(i, i + 2);
                 cards.add(cardCode);
             }
 
