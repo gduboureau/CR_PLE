@@ -1,7 +1,6 @@
 import java.io.IOException;
 
 import DataBase.HBase;
-import DataCalcul.SparkStatsCalculs;
 import DataCalcul.StatsCalculs;
 import TopKCalcul.TopK;
 
@@ -12,10 +11,6 @@ public class Driver {
     public void doMapReduce(String input, int k) throws Exception{
         StatsCalculs.mainStatsCalculs(input, "DataPLE/resultStatsCalculs");
         TopK.mainTopK("DataPLE/resultStatsCalculs/", "DataPLE/resultTopK", k);
-    }
-
-    public void doSpark() throws Exception{
-        SparkStatsCalculs.mainSpark();
     }
 
     public void doHBase() throws IOException{
@@ -30,7 +25,6 @@ public class Driver {
         Options options = new Options();
         options.addOption("h", "help", false, "Afficher l'aide");
         options.addOption("mapreduce", false, "Faire uniquement les traitements map reduce");
-        options.addOption("spark", false, "Faire uniquement les traitements spark");
         options.addOption("hbase", false, "Faire uniquement hbase");
         options.addOption("k", true, "Valeur de k");
         options.addOption("default", false, "Effectuer tous les traitements par défaut (option par défaut, peut être spécifiée explicitement ou non)");
@@ -68,8 +62,6 @@ public class Driver {
             driver.doMapReduce(inputFile, k);
         }else if(cmd.hasOption("hbase")){
             driver.doHBase();
-        }else if(cmd.hasOption("spark")){
-            driver.doSpark();
         }else{
             driver.doMapReduce(inputFile, k);
             driver.doHBase();

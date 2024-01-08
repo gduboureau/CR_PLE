@@ -3,6 +3,7 @@ package DataCalcul;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,7 +13,7 @@ import org.apache.hadoop.io.Writable;
  * The DeckStats class represents the statistics of a deck in a Clash Royal game.
  * It implements the Writable interface to allow serialization and deserialization of the object.
  */
-public class DeckStats implements Writable{
+public class DeckStats implements Writable, Serializable{
 
     private double useDeck;
     private double bestClan;
