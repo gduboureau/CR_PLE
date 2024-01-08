@@ -9,15 +9,15 @@ import java.util.Collections;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+
+import DataCalcul.DeckStats;
 
 /**
  * This class implements a MapReduce job to find the top K values for different statistics in a dataset.
@@ -61,7 +61,7 @@ public class TopK {
     /**
      * This class represents the mapper for the TopK job.
      */
-    public static class TopKMapper extends Mapper<LongWritable, Text, Text, DoubleWritable> {
+    public static class TopKMapper extends Mapper<Text, DeckStats, Text, DoubleWritable> {
 
         private Map<KeyMap, List<DeckDescriptor>> topKMap; 
         private int k;
@@ -79,21 +79,16 @@ public class TopK {
          * @param value The input value.
          * @param context The context object for the mapper.
          */
-        public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+        public void map(Text key, DeckStats  value, Context context) throws IOException, InterruptedException {
             try {
-
-                String line = value.toString();
-                String[] tokens = line.split("\t");
-                String deck = tokens[0];
-                String[] stats = tokens[1].split(",");
-
+                String deck = key.toString();
                 String[] deckField = deck.split("_");
-
-
-                for (int i = 0; i < stats.length; i++) {
-                    processEntry(deckField , Double.parseDouble(stats[i]), topKMap, k, nameStats[i]);
-                }
-
+    
+                processEntry(deckField, value.getBestClan(), topKMap, k, nameStats[1]);
+                processEntry(deckField, value.getDiffForceWin(), topKMap, k, nameStats[2]);
+                processEntry(deckField, (double) value.getWinDeck(), topKMap, k, nameStats[3]);
+                processEntry(deckField, (double) value.getUseDeck(), topKMap, k, nameStats[0]);
+                processEntry(deckField, (double) value.getPlayers().size(), topKMap, k, nameStats[4]);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -123,13 +118,6 @@ public class TopK {
             this.k = context.getConfiguration().getInt("k", 10);
         }
 
-        /**
-         * Reduces the intermediate key/value pairs to the final output key/value pairs.
-         *
-         * @param key The intermediate key.
-         * @param values The list of intermediate values.
-         * @param context The context object for the reducer.
-         */
         @Override
         public void reduce(Text key, Iterable<DoubleWritable> values, Context context) throws IOException, InterruptedException {
 
@@ -182,8 +170,8 @@ public class TopK {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(DoubleWritable.class);
         job.setOutputFormatClass(TextOutputFormat.class);
-        job.setInputFormatClass(TextInputFormat.class);
-        FileInputFormat.addInputPath(job, new Path(input));
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+        SequenceFileInputFormat.addInputPath(job, new Path(input));
         FileOutputFormat.setOutputPath(job, new Path(output));
         job.waitForCompletion(true);
     }
