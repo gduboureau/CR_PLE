@@ -3,92 +3,90 @@ package DataCalcul;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import scala.Tuple2;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class SparkStatsCalculs {
 
     public static void main(String[] args) {
         SparkConf conf = new SparkConf().setAppName("SparkStatsCalculs");
         JavaSparkContext sc = new JavaSparkContext(conf);
-        // SparkSession spark = SparkSession.builder().config(conf).getOrCreate();
 
         // Charger le fichier séquence résultant de la partie I
         JavaPairRDD<Text, DeckStats> inputRDD = sc.sequenceFile("DataPLE/resultStatsCalculs/", Text.class, DeckStats.class);
 
-           // Générer les combinaisons de 1 à 8 cartes
-           JavaPairRDD<String, List<String>> combinationsRDD = inputRDD.flatMapToPair(record -> {
+        JavaRDD<Tuple2<String, DeckStats>> ngramRdd = inputRDD.flatMap(x -> {
+            Text key = x._1();
+            DeckStats value = x._2();
+            String cardId = extractCardId(key.toString());
+            String[] substrings = cardId.split("(?<=\\G..)");
+            List<String> allCombinations = getAllCombinationsForCard(substrings);
 
-            String deck = record._1.toString();
-            String deckName;
-
-            if (deck.startsWith("WEEK") || deck.startsWith("MONTH")) {
-                deckName = deck.split("_")[2].trim();
-            }else{
-                deckName = deck.split("_")[1].trim();
-            }
-
-            List<String> cards = new ArrayList<>();
-            for (int i = 0; i < deckName.length(); i += 2) {
-                String cardCode = deckName.substring(i, i + 2);
-                cards.add(cardCode);
-            }
-
-            List<Tuple2<String, List<String>>> combinations = new ArrayList<>();
-
-            // Générer les combinaisons de 1 à 8 cartes
-            for (int i = 1; i <= 8; i++) {
-                List<List<String>> result = generateCombinations(cards, i);
-                for (List<String> combo : result) {
-                    combinations.add(new Tuple2<>(String.join(",", combo), cards));
-                }
-            }
-            return combinations.iterator();
+            return allCombinations.stream()
+                    .map(combination -> new Tuple2<>(combination, value))
+                    .iterator();
         });
 
-        System.out.println("Nombre de combinaisons : " + combinationsRDD.count());
+        JavaPairRDD<String, DeckStats> ngramRddPair = ngramRdd.mapToPair(tuple -> new Tuple2<>(tuple._1(), tuple._2()));
 
-        // Calculer les statistiques pour chaque combinaison
-        // JavaPairRDD<String, DeckStats> resultRDD = combinationsRDD
-        //         .reduceByKey((stats1, stats2) -> {
-        //             DeckStats combinedStats = new DeckStats();
-        //             combinedStats.setUseDeck(stats1._1.getUseDeck() + stats2._1.getUseDeck());
-        //             combinedStats.setWinDeck(stats1._1.getWinDeck() + stats2._1.getWinDeck());
-        //             combinedStats.setDiffForceWin(stats1._1.getDiffForceWin() + stats2._1.getDiffForceWin());
-        //             combinedStats.setBestClan(Math.max(stats1._1.getBestClan(), stats2._1.getBestClan()));
-        //             combinedStats.getPlayers().addAll(stats1._1.getPlayers());
-        //             combinedStats.getPlayers().addAll(stats2._1.getPlayers());
-        //             System.out.println("Combined stats for " + stats1._2 + " and " + stats2._2);
-        //             return new Tuple2<>(combinedStats, stats1._2);
-        //         })
-        //         .mapValues(statsTuple -> statsTuple._1);
+        JavaPairRDD<String, DeckStats> ngramRddByStatistic = ngramRddPair.reduceByKey((value1, value2) -> {
+            DeckStats result = new DeckStats();
+            result.setUseDeck(value1.getUseDeck() + value2.getUseDeck());
+            result.setWinDeck(value1.getWinDeck() + value2.getWinDeck());
+            result.setDiffForceWin(value1.getDiffForceWin() + value2.getDiffForceWin());
+            result.setBestClan(Math.max(value1.getBestClan(), value2.getBestClan()));
+
+            Set<String> uniquePlayers = new HashSet<>(value1.getPlayers());
+            uniquePlayers.addAll(value2.getPlayers());
+            result.setPlayers(uniquePlayers);
+
+            return result;
+        });
 
         // Enregistrer les résultats dans un nouveau fichier séquence
-        // resultRDD.saveAsTextFile("DataPLE/SparkStatsCalculs/");
+        ngramRddByStatistic.saveAsObjectFile("DataPLE/SparkStatsCalculs/");
 
-        sc.stop();
         sc.close();
     }
 
-    private static List<List<String>> generateCombinations(List<String> elements, int k) {
-        List<List<String>> combinations = new ArrayList<>();
-        generateCombinationsHelper(elements, k, 0, new ArrayList<String>(), combinations);
-        return combinations;
+    private static String extractCardId(String keyString) {
+        // Extraire le card id de la clé en fonction de votre format de clé
+        String[] parts = keyString.split("_");
+        if (parts.length == 3) {
+            return parts[2];
+        } else {
+            return parts[1]; // Gérer le cas où le card id n'est pas présent dans la clé
+        }
     }
 
-    private static void generateCombinationsHelper(List<String> elements, int k, int start, List<String> current, List<List<String>> combinations) {
-        if (k == 0) {
-            combinations.add(new ArrayList<>(current));
+    public static List<String> getAllCombinationsForCard(String[] elements) {
+        List<List<String>> allCombinations = new ArrayList<>();
+        generateCombinations(elements, 0, new ArrayList<>(), allCombinations);
+
+        return allCombinations.stream()
+                .map(combination -> String.join("", combination))
+                .collect(Collectors.toList());
+    }
+
+    public static void generateCombinations(String[] elements, int index, List<String> current, List<List<String>> allCombinations) {
+        if (index == elements.length) {
+            if (!current.isEmpty()) {
+                allCombinations.add(new ArrayList<>(current));
+            }
             return;
         }
 
-        for (int i = start; i < elements.size(); i++) {
-            current.add(elements.get(i));
-            generateCombinationsHelper(elements, k - 1, i + 1, current, combinations);
-            current.remove(current.size() - 1);
-        }
+        current.add(elements[index]);
+        generateCombinations(elements, index + 1, current, allCombinations);
+
+        current.remove(current.size() - 1);
+        generateCombinations(elements, index + 1, current, allCombinations);
     }
 }
